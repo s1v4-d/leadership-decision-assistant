@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class HealthResponse(BaseModel):
@@ -34,3 +34,26 @@ class IngestResponse(BaseModel):
     status: str
     message: str
     file_count: int
+
+
+class SourceNodeResponse(BaseModel):
+    """A single source chunk returned by a query."""
+
+    text: str
+    score: float
+    metadata: dict[str, str] = {}
+
+
+class QueryRequest(BaseModel):
+    """Request schema for POST /api/v1/query."""
+
+    query: str = Field(min_length=1, max_length=2000)
+    stream: bool = False
+
+
+class QueryResponse(BaseModel):
+    """Response schema for POST /api/v1/query."""
+
+    answer: str
+    sources: list[SourceNodeResponse] = []
+    cached: bool = False
