@@ -12,3 +12,19 @@ class IngestionResult(BaseModel):
     node_count: int
     status: str
     error_message: str | None = None
+
+
+class SourceNode(BaseModel):
+    """A retrieved source chunk with relevance score."""
+
+    text: str
+    score: float
+    metadata: dict[str, str] = {}
+
+
+class QueryResult(BaseModel):
+    """Result of a RAG query execution."""
+
+    answer: str
+    source_nodes: list[SourceNode]
+    confidence_score: float | None = None
