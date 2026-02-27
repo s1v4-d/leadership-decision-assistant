@@ -15,6 +15,12 @@ from slowapi.util import get_remote_address
 from sse_starlette import EventSourceResponse, ServerSentEvent
 
 from backend.src.api.dependencies import SettingsDep  # noqa: TC001
+from backend.src.core.security import (
+    PromptInjectionError,
+    detect_prompt_injection,
+    parse_blocked_patterns,
+    sanitize_query,
+)
 from backend.src.models.schemas import QueryRequest, QueryResponse, SourceNodeResponse
 from backend.src.tools.rag_tool import execute_query
 
@@ -39,6 +45,15 @@ def _get_redis_client(settings: SettingsDep) -> Redis | None:
 
 def _build_cache_key(query_text: str) -> str:
     return "query:" + hashlib.sha256(query_text.encode()).hexdigest()
+
+
+def secure_query_input(query_text: str, settings: SettingsDep) -> str:
+    """Sanitize input and check for prompt injection."""
+    sanitized = sanitize_query(query_text, max_length=settings.security.max_query_length)
+    blocked = parse_blocked_patterns(settings.security.blocked_patterns)
+    if detect_prompt_injection(sanitized, blocked):
+        raise PromptInjectionError("Prompt injection detected in query")
+    return sanitized
 
 
 def _build_query_response(
@@ -106,18 +121,20 @@ async def query_documents(
     """Execute a RAG query, with optional SSE streaming and Redis caching."""
     logger.info("query_received", query_length=len(body.query), stream=body.stream)
 
+    sanitized_query = secure_query_input(body.query, settings)
+
     redis_client = _get_redis_client(settings)
-    cache_key = _build_cache_key(body.query)
+    cache_key = _build_cache_key(sanitized_query)
 
     if body.stream:
-        return EventSourceResponse(_stream_query_events(body.query, settings))
+        return EventSourceResponse(_stream_query_events(sanitized_query, settings))
 
     cached_response = await _check_cache(redis_client, cache_key)
     if cached_response is not None:
         logger.info("cache_hit", cache_key=cache_key)
         return cached_response
 
-    response = await _run_query(body.query, settings)
+    response = await _run_query(sanitized_query, settings)
 
     await _store_cache(redis_client, cache_key, response, settings.redis.ttl_seconds)
 

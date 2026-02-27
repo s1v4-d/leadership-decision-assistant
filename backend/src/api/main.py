@@ -19,6 +19,7 @@ from backend.src.api.query_routes import limiter, query_router
 from backend.src.api.routes import router
 from backend.src.core.config import Settings, get_settings
 from backend.src.core.log import configure_logging
+from backend.src.core.security import PromptInjectionError
 from backend.src.models.schemas import ErrorResponse
 
 if TYPE_CHECKING:
@@ -98,6 +99,17 @@ def _add_exception_handlers(app: FastAPI) -> None:
             content=ErrorResponse(
                 error="rate_limit_exceeded",
                 detail=str(exc.detail),
+                request_id=request.headers.get("x-request-id"),
+            ).model_dump(),
+        )
+
+    @app.exception_handler(PromptInjectionError)
+    async def injection_handler(request: Request, exc: PromptInjectionError) -> JSONResponse:
+        return JSONResponse(
+            status_code=422,
+            content=ErrorResponse(
+                error="prompt_injection_detected",
+                detail=str(exc),
                 request_id=request.headers.get("x-request-id"),
             ).model_dump(),
         )
