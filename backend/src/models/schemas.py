@@ -26,3 +26,11 @@ class ErrorResponse(BaseModel):
     error: str
     detail: str | None = None
     request_id: str | None = None
+
+
+class IngestResponse(BaseModel):
+    """Response schema for POST /api/v1/ingest."""
+
+    status: str
+    message: str
+    file_count: int
