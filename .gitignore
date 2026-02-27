@@ -214,3 +214,7 @@ guidance/
 data/sample_documents/*.pdf
 data/sample_documents/*.docx
 data/sample_documents/*.xlsx
+data/sample_documents/*.txt
+data/sample_documents/*.csv
+data/sample_documents/*.json
+data/sample_documents/*.md

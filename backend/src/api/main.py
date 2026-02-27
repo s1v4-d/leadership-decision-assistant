@@ -13,6 +13,7 @@ from starlette.middleware.cors import CORSMiddleware
 from starlette.middleware.gzip import GZipMiddleware
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
+from backend.src.api.ingest_routes import ingest_router
 from backend.src.api.routes import router
 from backend.src.core.config import Settings, get_settings
 from backend.src.core.log import configure_logging
@@ -104,3 +105,4 @@ def _add_exception_handlers(app: FastAPI) -> None:
 def _include_routers(app: FastAPI) -> None:
     """Mount all API routers."""
     app.include_router(router)
+    app.include_router(ingest_router)
