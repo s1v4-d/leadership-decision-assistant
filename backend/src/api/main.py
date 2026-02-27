@@ -9,11 +9,13 @@ from typing import TYPE_CHECKING
 import structlog
 from fastapi import FastAPI, Request, Response
 from fastapi.responses import JSONResponse
+from slowapi.errors import RateLimitExceeded
 from starlette.middleware.cors import CORSMiddleware
 from starlette.middleware.gzip import GZipMiddleware
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 from backend.src.api.ingest_routes import ingest_router
+from backend.src.api.query_routes import limiter, query_router
 from backend.src.api.routes import router
 from backend.src.core.config import Settings, get_settings
 from backend.src.core.log import configure_logging
@@ -87,6 +89,18 @@ def _add_middleware(app: FastAPI, settings: Settings) -> None:
 
 def _add_exception_handlers(app: FastAPI) -> None:
     """Register global exception handlers."""
+    app.state.limiter = limiter
+
+    @app.exception_handler(RateLimitExceeded)
+    async def rate_limit_handler(request: Request, exc: RateLimitExceeded) -> JSONResponse:
+        return JSONResponse(
+            status_code=429,
+            content=ErrorResponse(
+                error="rate_limit_exceeded",
+                detail=str(exc.detail),
+                request_id=request.headers.get("x-request-id"),
+            ).model_dump(),
+        )
 
     @app.exception_handler(Exception)
     async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONResponse:
@@ -106,3 +120,4 @@ def _include_routers(app: FastAPI) -> None:
     """Mount all API routers."""
     app.include_router(router)
     app.include_router(ingest_router)
+    app.include_router(query_router)
