@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 import asyncpg
 import redis.asyncio as aioredis
 import structlog
@@ -10,6 +12,9 @@ from fastapi.responses import JSONResponse
 
 from backend.src.api.dependencies import SettingsDep  # noqa: TC001
 from backend.src.models.schemas import HealthResponse, ReadyResponse
+
+if TYPE_CHECKING:
+    from backend.src.core.config import Settings
 
 logger = structlog.get_logger(__name__)
 
@@ -46,7 +51,7 @@ async def ready(settings: SettingsDep) -> JSONResponse:
     )
 
 
-async def _check_postgres(settings: SettingsDep) -> bool:
+async def _check_postgres(settings: Settings) -> bool:
     """Attempt a lightweight PostgreSQL connection check."""
     try:
         pg = settings.postgres
@@ -66,11 +71,11 @@ async def _check_postgres(settings: SettingsDep) -> bool:
         return True
 
 
-async def _check_redis(settings: SettingsDep) -> bool:
+async def _check_redis(settings: Settings) -> bool:
     """Attempt a lightweight Redis ping."""
     try:
         client = aioredis.from_url(settings.redis.url)
-        await client.ping()
+        await client.ping()  # type: ignore[misc]
         await client.aclose()
     except Exception:
         logger.debug("redis_check_failed", exc_info=True)

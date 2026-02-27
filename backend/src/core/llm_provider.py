@@ -25,7 +25,7 @@ def create_llm(settings: Settings) -> LLM:
     if provider == "anthropic":
         from llama_index.llms.anthropic import Anthropic
 
-        return Anthropic(
+        return Anthropic(  # type: ignore[no-any-return]
             model=settings.llm_model,
             temperature=settings.llm_temperature,
             max_tokens=settings.llm_max_tokens,
