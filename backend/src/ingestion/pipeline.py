@@ -35,7 +35,7 @@ def create_vector_store(settings: Settings) -> PGVectorStore:
         database=pg.database,
         host=pg.host,
         password=pg.password.get_secret_value(),
-        port=pg.port,
+        port=str(pg.port),
         user=pg.user,
         table_name=pg.vector_table,
         embed_dim=settings.embedding_dimension,

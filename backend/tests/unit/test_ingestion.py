@@ -184,7 +184,7 @@ class TestCreateVectorStore:
         call_kwargs = mock_from_params.call_args[1]
         assert call_kwargs["database"] == settings.postgres.database
         assert call_kwargs["host"] == settings.postgres.host
-        assert call_kwargs["port"] == settings.postgres.port
+        assert call_kwargs["port"] == str(settings.postgres.port)
         assert call_kwargs["user"] == settings.postgres.user
         assert call_kwargs["table_name"] == settings.postgres.vector_table
         assert call_kwargs["embed_dim"] == settings.embedding_dimension
