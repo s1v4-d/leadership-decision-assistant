@@ -35,3 +35,10 @@ class AgentResponse(BaseModel):
 
     answer: str
     tool_calls_count: int = 0
+
+
+class SqlQueryResult(BaseModel):
+    """Result of a NL2SQL query execution."""
+
+    answer: str
+    sql_query: str = ""
