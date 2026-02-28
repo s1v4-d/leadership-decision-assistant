@@ -49,6 +49,7 @@ class QueryRequest(BaseModel):
 
     query: str = Field(min_length=1, max_length=2000)
     stream: bool = False
+    collection_id: str | None = None
 
 
 class QueryResponse(BaseModel):

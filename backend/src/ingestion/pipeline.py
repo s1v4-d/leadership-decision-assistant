@@ -28,8 +28,8 @@ _HNSW_DEFAULTS = {
 }
 
 
-def create_vector_store(settings: Settings) -> PGVectorStore:
-    """Create a PGVectorStore connected to the configured PostgreSQL database."""
+def create_vector_store(settings: Settings, *, table_name: str | None = None) -> PGVectorStore:
+    """Create a PGVectorStore, optionally targeting a specific collection table."""
     pg = settings.postgres
     return PGVectorStore.from_params(
         database=pg.database,
@@ -37,15 +37,15 @@ def create_vector_store(settings: Settings) -> PGVectorStore:
         password=pg.password.get_secret_value(),
         port=str(pg.port),
         user=pg.user,
-        table_name=pg.vector_table,
+        table_name=table_name or pg.vector_table,
         embed_dim=settings.embedding_dimension,
         hnsw_kwargs=_HNSW_DEFAULTS,
     )
 
 
-def create_ingestion_pipeline(settings: Settings) -> IngestionPipeline:
+def create_ingestion_pipeline(settings: Settings, *, table_name: str | None = None) -> IngestionPipeline:
     """Assemble a LlamaIndex IngestionPipeline with chunking, embedding, and vector storage."""
-    vector_store = create_vector_store(settings)
+    vector_store = create_vector_store(settings, table_name=table_name)
     splitter = create_sentence_splitter(settings.rag)
 
     return IngestionPipeline(
@@ -57,11 +57,11 @@ def create_ingestion_pipeline(settings: Settings) -> IngestionPipeline:
     )
 
 
-def ingest_documents(directory: Path, settings: Settings) -> IngestionResult:
+def ingest_documents(directory: Path, settings: Settings, *, table_name: str | None = None) -> IngestionResult:
     """Load documents from directory, run through ingestion pipeline, and store vectors."""
     try:
         documents = load_documents(directory)
-        pipeline = create_ingestion_pipeline(settings)
+        pipeline = create_ingestion_pipeline(settings, table_name=table_name)
         nodes = pipeline.run(documents=documents)
         logger.info(
             "ingestion_complete",

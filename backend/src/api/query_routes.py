@@ -14,7 +14,7 @@ from slowapi import Limiter
 from slowapi.util import get_remote_address
 from sse_starlette import EventSourceResponse, ServerSentEvent
 
-from backend.src.api.dependencies import SettingsDep  # noqa: TC001
+from backend.src.api.dependencies import SessionDep, SettingsDep  # noqa: TC001
 from backend.src.core.security import (
     PromptInjectionError,
     detect_prompt_injection,
@@ -22,6 +22,7 @@ from backend.src.core.security import (
     sanitize_query,
 )
 from backend.src.models.schemas import QueryRequest, QueryResponse, SourceNodeResponse
+from backend.src.models.tables import Collection
 from backend.src.tools.rag_tool import execute_query
 
 if TYPE_CHECKING:
@@ -92,16 +93,39 @@ async def _store_cache(
         logger.warning("cache_write_failed", cache_key=cache_key)
 
 
-async def _run_query(query_text: str, settings: SettingsDep) -> QueryResponse:
-    result = await asyncio.to_thread(execute_query, query_text, settings)
+def _resolve_vector_table(
+    collection_id: str | None,
+    session: SessionDep,
+) -> str | None:
+    """Resolve a collection_id to its vector table name, or None for default."""
+    if collection_id is None:
+        return None
+    collection = session.get(Collection, collection_id)
+    if collection is None:
+        return None
+    return collection.vector_table
+
+
+async def _run_query(
+    query_text: str,
+    settings: SettingsDep,
+    *,
+    table_name: str | None = None,
+) -> QueryResponse:
+    result = await asyncio.to_thread(execute_query, query_text, settings, table_name=table_name)
     sources = [
         SourceNodeResponse(text=node.text, score=node.score, metadata=node.metadata) for node in result.source_nodes
     ]
     return _build_query_response(result.answer, sources)
 
 
-async def _stream_query_events(query_text: str, settings: SettingsDep) -> AsyncGenerator[ServerSentEvent]:
-    response = await _run_query(query_text, settings)
+async def _stream_query_events(
+    query_text: str,
+    settings: SettingsDep,
+    *,
+    table_name: str | None = None,
+) -> AsyncGenerator[ServerSentEvent]:
+    response = await _run_query(query_text, settings, table_name=table_name)
 
     yield ServerSentEvent(data=response.answer, event="answer")
 
@@ -117,24 +141,27 @@ async def query_documents(
     request: Request,  # noqa: ARG001  # required by SlowAPI limiter
     body: QueryRequest,
     settings: SettingsDep,
+    session: SessionDep,
 ) -> QueryResponse | EventSourceResponse:
     """Execute a RAG query, with optional SSE streaming and Redis caching."""
     logger.info("query_received", query_length=len(body.query), stream=body.stream)
 
     sanitized_query = secure_query_input(body.query, settings)
 
+    table_name = _resolve_vector_table(body.collection_id, session)
+
     redis_client = _get_redis_client(settings)
     cache_key = _build_cache_key(sanitized_query)
 
     if body.stream:
-        return EventSourceResponse(_stream_query_events(sanitized_query, settings))
+        return EventSourceResponse(_stream_query_events(sanitized_query, settings, table_name=table_name))
 
     cached_response = await _check_cache(redis_client, cache_key)
     if cached_response is not None:
         logger.info("cache_hit", cache_key=cache_key)
         return cached_response
 
-    response = await _run_query(sanitized_query, settings)
+    response = await _run_query(sanitized_query, settings, table_name=table_name)
 
     await _store_cache(redis_client, cache_key, response, settings.redis.ttl_seconds)
 

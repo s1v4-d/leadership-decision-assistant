@@ -16,10 +16,19 @@ if TYPE_CHECKING:
     from fastapi import FastAPI
 
 
+def _mock_session() -> MagicMock:
+    from unittest.mock import MagicMock
+
+    return MagicMock()
+
+
 def _create_test_app() -> FastAPI:
+    from backend.src.api.dependencies import get_session
     from backend.src.api.main import create_app
 
-    return create_app()
+    app = create_app()
+    app.dependency_overrides[get_session] = _mock_session
+    return app
 
 
 def _make_settings(**overrides: object) -> Settings:
