@@ -22,7 +22,9 @@ stop: ## Stop containers and prune volumes
 build: ## Rebuild containers from scratch
 	docker compose down -v --remove-orphans
 	docker compose build --no-cache
-	docker compose up -d
+
+logs: ## Tail logs from all containers
+	docker compose logs -f
 
 help: ## Show available targets
 	@uv run python -c "import re; [print(f'  {m.group(1):<12s} {m.group(2)}') for line in open('Makefile') if (m := re.match(r'^([a-zA-Z_-]+):.*##\s*(.*)', line))]"
