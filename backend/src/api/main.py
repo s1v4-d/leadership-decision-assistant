@@ -16,12 +16,13 @@ from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 from backend.src.agents.leadership_agent import create_leadership_agent
 from backend.src.api.agent_routes import agent_router, set_agent
+from backend.src.api.collection_routes import collection_router
 from backend.src.api.ingest_routes import ingest_router
 from backend.src.api.query_routes import limiter, query_router
 from backend.src.api.routes import router
 from backend.src.api.seed import seed_sample_documents
 from backend.src.core.config import Settings, get_settings
-from backend.src.core.database import create_sync_engine, create_tables
+from backend.src.core.database import create_session_factory, create_sync_engine, create_tables
 from backend.src.core.log import configure_logging
 from backend.src.core.security import PromptInjectionError
 from backend.src.core.telemetry import configure_telemetry, instrument_fastapi, shutdown_telemetry
@@ -44,7 +45,7 @@ async def lifespan(_app: FastAPI) -> AsyncGenerator[None]:
     try:
         engine = create_sync_engine(settings)
         create_tables(engine)
-        engine.dispose()
+        _app.state.session_factory = create_session_factory(engine)
     except Exception:
         logger.exception("structured_tables_init_failed")
 
@@ -162,3 +163,4 @@ def _include_routers(app: FastAPI) -> None:
     app.include_router(ingest_router)
     app.include_router(query_router)
     app.include_router(agent_router)
+    app.include_router(collection_router)
