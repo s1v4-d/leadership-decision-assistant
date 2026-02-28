@@ -21,6 +21,7 @@ from backend.src.api.query_routes import limiter, query_router
 from backend.src.api.routes import router
 from backend.src.api.seed import seed_sample_documents
 from backend.src.core.config import Settings, get_settings
+from backend.src.core.database import create_sync_engine, create_tables
 from backend.src.core.log import configure_logging
 from backend.src.core.security import PromptInjectionError
 from backend.src.core.telemetry import configure_telemetry, instrument_fastapi, shutdown_telemetry
@@ -39,6 +40,13 @@ async def lifespan(_app: FastAPI) -> AsyncGenerator[None]:
     configure_logging(log_level=settings.log_level, log_format=settings.log_format)
     configure_telemetry(settings)
     logger.info("app_starting", app_name=settings.app_name)
+
+    try:
+        engine = create_sync_engine(settings)
+        create_tables(engine)
+        engine.dispose()
+    except Exception:
+        logger.exception("structured_tables_init_failed")
 
     try:
         agent = create_leadership_agent(settings)
