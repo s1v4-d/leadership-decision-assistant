@@ -65,6 +65,7 @@ class AgentRequest(BaseModel):
 
     query: str = Field(min_length=1, max_length=2000)
     stream: bool = False
+    collection_id: str | None = None
 
 
 class AgentQueryResponse(BaseModel):
@@ -88,18 +89,8 @@ class CollectionResponse(BaseModel):
     name: str
     description: str | None = None
     vector_table: str
-    asset_count: int = 0
     created_at: str
     updated_at: str
-
-
-class AssetResponse(BaseModel):
-    """Response schema for an asset."""
-
-    id: str
-    filename: str
-    file_type: str
-    created_at: str
 
 
 class AssetUploadResponse(BaseModel):

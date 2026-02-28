@@ -70,12 +70,17 @@ async def query_agent(
     agent: AgentDep,
 ) -> AgentQueryResponse | EventSourceResponse:
     """Run the leadership agent and return the response."""
-    logger.info("agent_query_received", query_length=len(body.query), stream=body.stream)
+    logger.info(
+        "agent_query_received",
+        query_length=len(body.query),
+        stream=body.stream,
+        collection_id=body.collection_id,
+    )
     sanitized = _sanitize(body.query, settings)
 
     if body.stream:
         return EventSourceResponse(_stream_events(sanitized, agent))
 
-    result = await run_agent_query(sanitized, agent)
+    result = await run_agent_query(sanitized, agent, collection_id=body.collection_id)
     logger.info("agent_query_complete", tool_calls=result.tool_calls_count)
     return AgentQueryResponse(answer=result.answer, tool_calls_count=result.tool_calls_count)

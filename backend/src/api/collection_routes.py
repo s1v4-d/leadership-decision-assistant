@@ -1,4 +1,9 @@
-"""Collection and asset management API routes."""
+"""Collection management API routes.
+
+Assets are stored as document metadata (filename, collection_id, file_type)
+inside the pgvector table — not as a separate SQL table. This mirrors the
+talk2data pattern where asset_id is a JSONB metadata field used for filtering.
+"""
 
 from __future__ import annotations
 
@@ -11,12 +16,12 @@ from typing import TYPE_CHECKING
 
 import structlog
 from fastapi import APIRouter, BackgroundTasks, HTTPException, UploadFile
-from sqlalchemy import func, select
+from sqlalchemy import select
 
 from backend.src.api.dependencies import SessionDep, SettingsDep  # noqa: TC001
 from backend.src.ingestion.pipeline import ingest_documents
 from backend.src.models.schemas import AssetUploadResponse, CollectionCreate, CollectionResponse
-from backend.src.models.tables import Asset, Collection
+from backend.src.models.tables import Collection
 
 if TYPE_CHECKING:
     from backend.src.core.config import Settings
@@ -51,19 +56,14 @@ def create_collection(body: CollectionCreate, session: SessionDep) -> Collection
 
     logger.info("collection_created", collection_id=collection.id, name=collection.name)
 
-    return _to_collection_response(collection, asset_count=0)
+    return _to_collection_response(collection)
 
 
 @collection_router.get("/collections", response_model=list[CollectionResponse])
 def list_collections(session: SessionDep) -> list[CollectionResponse]:
-    """List all collections with asset counts."""
-    stmt = (
-        select(Collection, func.count(Asset.id).label("asset_count"))
-        .outerjoin(Asset, Asset.collection_id == Collection.id)
-        .group_by(Collection.id)
-    )
-    results = session.execute(stmt).all()
-    return [_to_collection_response(row[0], asset_count=row[1]) for row in results]
+    """List all collections."""
+    results = session.execute(select(Collection)).scalars().all()
+    return [_to_collection_response(c) for c in results]
 
 
 @collection_router.get("/collections/{collection_id}", response_model=CollectionResponse)
@@ -72,26 +72,7 @@ def get_collection(collection_id: str, session: SessionDep) -> CollectionRespons
     collection = session.get(Collection, collection_id)
     if not collection:
         raise HTTPException(status_code=404, detail="Collection not found")
-    asset_count = session.scalar(select(func.count(Asset.id)).where(Asset.collection_id == collection_id)) or 0
-    return _to_collection_response(collection, asset_count=asset_count)
-
-
-@collection_router.get("/collections/{collection_id}/assets")
-def list_assets(collection_id: str, session: SessionDep) -> list[dict[str, str]]:
-    """List assets in a collection."""
-    collection = session.get(Collection, collection_id)
-    if not collection:
-        raise HTTPException(status_code=404, detail="Collection not found")
-    assets = session.execute(select(Asset).where(Asset.collection_id == collection_id)).scalars().all()
-    return [
-        {
-            "id": a.id,
-            "filename": a.filename,
-            "file_type": a.file_type,
-            "created_at": str(a.created_at),
-        }
-        for a in assets
-    ]
+    return _to_collection_response(collection)
 
 
 @collection_router.post("/collections/{collection_id}/assets", response_model=AssetUploadResponse, status_code=202)
@@ -102,7 +83,11 @@ async def upload_assets(
     session: SessionDep,
     settings: SettingsDep,
 ) -> AssetUploadResponse:
-    """Upload files into a specific collection."""
+    """Upload files into a collection.
+
+    File metadata (filename, file_type, collection_id) is injected into each
+    document's metadata during ingestion — no separate assets table needed.
+    """
     collection = session.get(Collection, collection_id)
     if not collection:
         raise HTTPException(status_code=404, detail="Collection not found")
@@ -114,22 +99,35 @@ async def upload_assets(
             continue
         content = await file.read()
         (upload_dir / file.filename).write_bytes(content)
-        suffix = Path(file.filename).suffix.lstrip(".")
-        asset = Asset(collection_id=collection_id, filename=file.filename, file_type=suffix or "unknown")
-        session.add(asset)
         file_count += 1
 
-    session.commit()
-    background_tasks.add_task(_run_collection_ingestion, upload_dir, settings, collection.vector_table)
+    extra_metadata = {"collection_id": collection_id}
+    background_tasks.add_task(
+        _run_collection_ingestion,
+        upload_dir,
+        settings,
+        collection.vector_table,
+        extra_metadata,
+    )
 
     logger.info("collection_upload_accepted", collection_id=collection_id, file_count=file_count)
     return AssetUploadResponse(status="accepted", collection_id=collection_id, file_count=file_count)
 
 
-def _run_collection_ingestion(directory: Path, settings: Settings, vector_table: str) -> None:
+def _run_collection_ingestion(
+    directory: Path,
+    settings: Settings,
+    vector_table: str,
+    extra_metadata: dict[str, str],
+) -> None:
     """Background task: ingest uploaded files into a collection's vector table."""
     try:
-        result = ingest_documents(directory, settings, table_name=vector_table)
+        result = ingest_documents(
+            directory,
+            settings,
+            table_name=vector_table,
+            extra_metadata=extra_metadata,
+        )
         logger.info(
             "collection_ingestion_complete",
             status=result.status,
@@ -142,14 +140,13 @@ def _run_collection_ingestion(directory: Path, settings: Settings, vector_table:
         shutil.rmtree(directory, ignore_errors=True)
 
 
-def _to_collection_response(collection: Collection, *, asset_count: int) -> CollectionResponse:
+def _to_collection_response(collection: Collection) -> CollectionResponse:
     """Map an ORM Collection to CollectionResponse."""
     return CollectionResponse(
         id=collection.id,
         name=collection.name,
         description=collection.description,
         vector_table=collection.vector_table,
-        asset_count=asset_count,
         created_at=str(collection.created_at),
         updated_at=str(collection.updated_at),
     )

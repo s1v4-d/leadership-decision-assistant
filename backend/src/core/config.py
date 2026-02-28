@@ -22,6 +22,8 @@ class PostgresSettings(BaseModel):
     password: SecretStr = SecretStr("leadership_dev_password")
     database: str = "leadership_agent"
     vector_table: str = "document_vectors"
+    vector_schema: str = "vector_store"
+    sql_schema: str = "structured"
 
     @property
     def dsn(self) -> str:

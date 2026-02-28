@@ -81,13 +81,24 @@ async def run_agent_query(
     query: str,
     agent: ReActAgent,
     ctx: Context | None = None,
+    *,
+    collection_id: str | None = None,
 ) -> AgentResponse:
-    """Run the agent and return a structured response."""
+    """Run the agent and return a structured response.
+
+    When *collection_id* is provided it is prepended to the user message
+    as a metadata hint so that tool implementations can scope their
+    retrieval accordingly.
+    """
     if ctx is None:
         ctx = Context(agent)
 
+    user_msg = query
+    if collection_id:
+        user_msg = f"[collection_id={collection_id}] {query}"
+
     try:
-        handler = agent.run(query, ctx=ctx)
+        handler = agent.run(user_msg, ctx=ctx)
         response = await handler
         answer = str(response)
         tool_calls_count = len(response.tool_calls) if response.tool_calls else 0
@@ -96,6 +107,7 @@ async def run_agent_query(
             "agent_query_completed",
             query_length=len(query),
             tool_calls=tool_calls_count,
+            collection_id=collection_id,
         )
 
         return AgentResponse(answer=answer, tool_calls_count=tool_calls_count)

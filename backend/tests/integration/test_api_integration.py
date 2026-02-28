@@ -7,14 +7,24 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from httpx import ASGITransport, AsyncClient
 
+from backend.src.api.dependencies import get_session
 from backend.src.api.main import create_app
 from backend.src.models.domain import QueryResult, SourceNode
 
 
+def _mock_session():
+    """Yield a MagicMock session for tests that don't need a real DB."""
+    session = MagicMock()
+    session.get.return_value = None
+    yield session
+
+
 @pytest.fixture()
 def app():
-    """Create a fresh FastAPI app for each test."""
-    return create_app()
+    """Create a fresh FastAPI app with a mock DB session."""
+    application = create_app()
+    application.dependency_overrides[get_session] = _mock_session
+    return application
 
 
 @pytest.fixture()

@@ -111,8 +111,15 @@ async def _run_query(
     settings: SettingsDep,
     *,
     table_name: str | None = None,
+    collection_id: str | None = None,
 ) -> QueryResponse:
-    result = await asyncio.to_thread(execute_query, query_text, settings, table_name=table_name)
+    result = await asyncio.to_thread(
+        execute_query,
+        query_text,
+        settings,
+        table_name=table_name,
+        collection_id=collection_id,
+    )
     sources = [
         SourceNodeResponse(text=node.text, score=node.score, metadata=node.metadata) for node in result.source_nodes
     ]
@@ -124,8 +131,14 @@ async def _stream_query_events(
     settings: SettingsDep,
     *,
     table_name: str | None = None,
+    collection_id: str | None = None,
 ) -> AsyncGenerator[ServerSentEvent]:
-    response = await _run_query(query_text, settings, table_name=table_name)
+    response = await _run_query(
+        query_text,
+        settings,
+        table_name=table_name,
+        collection_id=collection_id,
+    )
 
     yield ServerSentEvent(data=response.answer, event="answer")
 
@@ -154,14 +167,26 @@ async def query_documents(
     cache_key = _build_cache_key(sanitized_query)
 
     if body.stream:
-        return EventSourceResponse(_stream_query_events(sanitized_query, settings, table_name=table_name))
+        return EventSourceResponse(
+            _stream_query_events(
+                sanitized_query,
+                settings,
+                table_name=table_name,
+                collection_id=body.collection_id,
+            ),
+        )
 
     cached_response = await _check_cache(redis_client, cache_key)
     if cached_response is not None:
         logger.info("cache_hit", cache_key=cache_key)
         return cached_response
 
-    response = await _run_query(sanitized_query, settings, table_name=table_name)
+    response = await _run_query(
+        sanitized_query,
+        settings,
+        table_name=table_name,
+        collection_id=body.collection_id,
+    )
 
     await _store_cache(redis_client, cache_key, response, settings.redis.ttl_seconds)
 

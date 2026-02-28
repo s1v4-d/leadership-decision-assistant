@@ -7,7 +7,7 @@ import uuid
 from sqlalchemy import create_engine, inspect
 from sqlalchemy.orm import Session
 
-from backend.src.models.tables import Asset, Base, BusinessMetric, Collection
+from backend.src.models.tables import Base, BusinessMetric, Collection
 
 
 class TestCollectionModel:
@@ -51,30 +51,6 @@ class TestCollectionModel:
             session.refresh(collection)
             assert collection.created_at is not None
             assert collection.updated_at is not None
-
-
-class TestAssetModel:
-    def test_asset_table_name(self) -> None:
-        assert Asset.__tablename__ == "assets"
-
-    def test_asset_has_expected_columns(self) -> None:
-        columns = {c.name for c in Asset.__table__.columns}
-        assert columns == {"id", "collection_id", "filename", "file_type", "metadata_", "created_at"}
-
-    def test_asset_belongs_to_collection(self) -> None:
-        engine = create_engine("sqlite://")
-        Base.metadata.create_all(engine)
-        with Session(engine) as session:
-            collection = Collection(name="docs", vector_table="vec_docs")
-            session.add(collection)
-            session.flush()
-            asset = Asset(collection_id=collection.id, filename="report.pdf", file_type="pdf")
-            session.add(asset)
-            session.commit()
-            loaded = session.get(Asset, asset.id)
-            assert loaded is not None
-            assert loaded.collection_id == collection.id
-            assert loaded.filename == "report.pdf"
 
 
 class TestBusinessMetricModel:
@@ -150,5 +126,4 @@ class TestCreateAllIdempotent:
         Base.metadata.create_all(engine)
         inspector = inspect(engine)
         assert "collections" in inspector.get_table_names()
-        assert "assets" in inspector.get_table_names()
         assert "business_metrics" in inspector.get_table_names()
