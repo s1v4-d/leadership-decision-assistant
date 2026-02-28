@@ -18,25 +18,25 @@ if TYPE_CHECKING:
 logger = structlog.get_logger(__name__)
 
 
-def create_query_index(settings: Settings) -> VectorStoreIndex:
+def create_query_index(settings: Settings, *, table_name: str | None = None) -> VectorStoreIndex:
     """Build a VectorStoreIndex from the existing pgvector store."""
-    vector_store = create_vector_store(settings)
+    vector_store = create_vector_store(settings, table_name=table_name)
     return VectorStoreIndex.from_vector_store(vector_store=vector_store)
 
 
-def create_query_engine(settings: Settings) -> BaseQueryEngine:
+def create_query_engine(settings: Settings, *, table_name: str | None = None) -> BaseQueryEngine:
     """Create a query engine with configured RAG settings."""
-    index = create_query_index(settings)
+    index = create_query_index(settings, table_name=table_name)
     return index.as_query_engine(
         similarity_top_k=settings.rag.similarity_top_k,
         response_mode=settings.rag.response_mode,
     )
 
 
-def execute_query(query_text: str, settings: Settings) -> QueryResult:
+def execute_query(query_text: str, settings: Settings, *, table_name: str | None = None) -> QueryResult:
     """Run a RAG query and return structured results with source nodes."""
     try:
-        engine = create_query_engine(settings)
+        engine = create_query_engine(settings, table_name=table_name)
         response = engine.query(query_text)
 
         source_nodes = [

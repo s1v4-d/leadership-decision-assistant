@@ -120,16 +120,16 @@ async def upload_assets(
         file_count += 1
 
     session.commit()
-    background_tasks.add_task(_run_collection_ingestion, upload_dir, settings)
+    background_tasks.add_task(_run_collection_ingestion, upload_dir, settings, collection.vector_table)
 
     logger.info("collection_upload_accepted", collection_id=collection_id, file_count=file_count)
     return AssetUploadResponse(status="accepted", collection_id=collection_id, file_count=file_count)
 
 
-def _run_collection_ingestion(directory: Path, settings: Settings) -> None:
-    """Background task: ingest uploaded files, then clean up."""
+def _run_collection_ingestion(directory: Path, settings: Settings, vector_table: str) -> None:
+    """Background task: ingest uploaded files into a collection's vector table."""
     try:
-        result = ingest_documents(directory, settings)
+        result = ingest_documents(directory, settings, table_name=vector_table)
         logger.info(
             "collection_ingestion_complete",
             status=result.status,

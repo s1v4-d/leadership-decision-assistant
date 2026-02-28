@@ -61,7 +61,7 @@ class TestCreateQueryIndex:
 
         result = create_query_index(settings)
 
-        mock_create_vs.assert_called_once_with(settings)
+        mock_create_vs.assert_called_once_with(settings, table_name=None)
         mock_from_vs.assert_called_once_with(vector_store=mock_vs)
         assert result is mock_index
 
