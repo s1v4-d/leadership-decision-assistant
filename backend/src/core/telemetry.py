@@ -18,8 +18,6 @@ if TYPE_CHECKING:
 
     from backend.src.core.config import Settings
 
-_metrics: AppMetrics | None = None
-
 
 @dataclass
 class AppMetrics:

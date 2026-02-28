@@ -6,9 +6,9 @@ from typing import TYPE_CHECKING
 
 import structlog
 from llama_index.core.ingestion import IngestionPipeline
-from llama_index.embeddings.openai import OpenAIEmbedding
 from llama_index.vector_stores.postgres import PGVectorStore
 
+from backend.src.core.llm_provider import create_embed_model
 from backend.src.ingestion.chunking import create_sentence_splitter
 from backend.src.ingestion.parsers import load_documents
 from backend.src.models.domain import IngestionResult
@@ -51,11 +51,7 @@ def create_ingestion_pipeline(settings: Settings) -> IngestionPipeline:
     return IngestionPipeline(
         transformations=[
             splitter,
-            OpenAIEmbedding(
-                model=settings.embedding_model,
-                dimensions=settings.embedding_dimension,
-                api_key=settings.openai_api_key.get_secret_value(),
-            ),
+            create_embed_model(settings),
         ],
         vector_store=vector_store,
     )
