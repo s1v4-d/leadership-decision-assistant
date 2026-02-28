@@ -11,6 +11,7 @@ from backend.src.agents.leadership_agent import (
     create_analysis_tool,
     create_leadership_agent,
     create_rag_query_tool,
+    create_sql_tool,
     run_agent_query,
     stream_agent_response,
 )
@@ -18,6 +19,7 @@ from backend.src.agents.prompts import (
     ANALYSIS_TOOL_DESCRIPTION,
     LEADERSHIP_SYSTEM_PROMPT,
     RAG_TOOL_DESCRIPTION,
+    SQL_TOOL_DESCRIPTION,
 )
 from backend.src.models.domain import AgentResponse
 
@@ -59,6 +61,15 @@ class TestPrompts:
     def test_analysis_tool_description_is_non_empty(self) -> None:
         assert ANALYSIS_TOOL_DESCRIPTION
         assert "analysis" in ANALYSIS_TOOL_DESCRIPTION.lower()
+
+    def test_sql_tool_description_is_non_empty(self) -> None:
+        assert SQL_TOOL_DESCRIPTION
+        assert "sql" in SQL_TOOL_DESCRIPTION.lower() or "structured" in SQL_TOOL_DESCRIPTION.lower()
+
+    def test_system_prompt_includes_tool_routing_guidance(self) -> None:
+        prompt_lower = LEADERSHIP_SYSTEM_PROMPT.lower()
+        assert "structured_query" in prompt_lower or "sql" in prompt_lower
+        assert "document_search" in prompt_lower or "document" in prompt_lower
 
 
 class TestAnalyzeLeadershipContext:
@@ -109,16 +120,31 @@ class TestCreateAnalysisTool:
         )
 
 
+class TestCreateSqlTool:
+    @patch("backend.src.agents.leadership_agent.create_sql_query_tool")
+    def test_delegates_to_sql_tool_factory(self, mock_create_sql: MagicMock) -> None:
+        mock_settings = MagicMock()
+        mock_tool = MagicMock()
+        mock_create_sql.return_value = mock_tool
+
+        result = create_sql_tool(mock_settings)
+
+        mock_create_sql.assert_called_once_with(mock_settings)
+        assert result is mock_tool
+
+
 class TestCreateLeadershipAgent:
     @patch("backend.src.agents.leadership_agent.ReActAgent")
+    @patch("backend.src.agents.leadership_agent.create_sql_tool")
     @patch("backend.src.agents.leadership_agent.create_analysis_tool")
     @patch("backend.src.agents.leadership_agent.create_rag_query_tool")
     @patch("backend.src.agents.leadership_agent.create_llm")
-    def test_assembles_agent_with_correct_components(
+    def test_assembles_agent_with_three_tools(
         self,
         mock_create_llm: MagicMock,
         mock_create_rag: MagicMock,
         mock_create_analysis: MagicMock,
+        mock_create_sql: MagicMock,
         mock_agent_cls: MagicMock,
     ) -> None:
         mock_llm = MagicMock()
@@ -127,6 +153,8 @@ class TestCreateLeadershipAgent:
         mock_create_rag.return_value = mock_rag_tool
         mock_analysis_tool = MagicMock()
         mock_create_analysis.return_value = mock_analysis_tool
+        mock_sql_tool = MagicMock()
+        mock_create_sql.return_value = mock_sql_tool
         mock_settings = MagicMock()
 
         create_leadership_agent(mock_settings)
@@ -134,8 +162,9 @@ class TestCreateLeadershipAgent:
         mock_create_llm.assert_called_once_with(mock_settings)
         mock_create_rag.assert_called_once_with(mock_settings)
         mock_create_analysis.assert_called_once()
+        mock_create_sql.assert_called_once_with(mock_settings)
         mock_agent_cls.assert_called_once_with(
-            tools=[mock_rag_tool, mock_analysis_tool],
+            tools=[mock_rag_tool, mock_analysis_tool, mock_sql_tool],
             llm=mock_llm,
             system_prompt=LEADERSHIP_SYSTEM_PROMPT,
         )
