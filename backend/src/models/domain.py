@@ -28,3 +28,10 @@ class QueryResult(BaseModel):
     answer: str
     source_nodes: list[SourceNode]
     confidence_score: float | None = None
+
+
+class AgentResponse(BaseModel):
+    """Result of a leadership agent query."""
+
+    answer: str
+    tool_calls_count: int = 0
