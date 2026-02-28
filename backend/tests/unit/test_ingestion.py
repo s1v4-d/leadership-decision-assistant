@@ -175,7 +175,7 @@ class TestCreateVectorStore:
     def test_creates_pgvector_store_with_correct_params(self, mock_from_params):
         from backend.src.ingestion.pipeline import create_vector_store
 
-        settings = Settings()
+        settings = Settings(_env_file=None)
         mock_from_params.return_value = MagicMock()
 
         create_vector_store(settings)
@@ -193,7 +193,7 @@ class TestCreateVectorStore:
     def test_creates_pgvector_store_with_password(self, mock_from_params):
         from backend.src.ingestion.pipeline import create_vector_store
 
-        settings = Settings()
+        settings = Settings(_env_file=None)
         mock_from_params.return_value = MagicMock()
 
         create_vector_store(settings)
@@ -205,7 +205,7 @@ class TestCreateVectorStore:
     def test_creates_pgvector_store_with_hnsw_kwargs(self, mock_from_params):
         from backend.src.ingestion.pipeline import create_vector_store
 
-        settings = Settings()
+        settings = Settings(_env_file=None)
         mock_from_params.return_value = MagicMock()
 
         create_vector_store(settings)
@@ -227,7 +227,7 @@ class TestCreateIngestionPipeline:
         mock_vs.return_value = MagicMock()
         mock_pipeline_cls.return_value = MagicMock()
 
-        create_ingestion_pipeline(Settings())
+        create_ingestion_pipeline(Settings(_env_file=None))
 
         call_kwargs = mock_pipeline_cls.call_args[1]
         transformations = call_kwargs["transformations"]
@@ -242,7 +242,7 @@ class TestCreateIngestionPipeline:
         mock_vs.return_value = MagicMock()
         mock_pipeline_cls.return_value = MagicMock()
 
-        create_ingestion_pipeline(Settings())
+        create_ingestion_pipeline(Settings(_env_file=None))
 
         call_kwargs = mock_pipeline_cls.call_args[1]
         transformations = call_kwargs["transformations"]
@@ -258,7 +258,7 @@ class TestCreateIngestionPipeline:
         mock_vs.return_value = mock_store
         mock_pipeline_cls.return_value = MagicMock()
 
-        create_ingestion_pipeline(Settings())
+        create_ingestion_pipeline(Settings(_env_file=None))
 
         call_kwargs = mock_pipeline_cls.call_args[1]
         assert call_kwargs["vector_store"] is mock_store
@@ -277,7 +277,7 @@ class TestIngestDocuments:
         mock_pipeline.run.return_value = [mock_node, mock_node, mock_node]
         mock_create_pipeline.return_value = mock_pipeline
 
-        result = ingest_documents(Path("/fake/dir"), Settings())
+        result = ingest_documents(Path("/fake/dir"), Settings(_env_file=None))
 
         assert isinstance(result, IngestionResult)
         assert result.document_count == 1
@@ -291,7 +291,7 @@ class TestIngestDocuments:
 
         mock_load.side_effect = FileNotFoundError("No such directory")
 
-        result = ingest_documents(Path("/fake/dir"), Settings())
+        result = ingest_documents(Path("/fake/dir"), Settings(_env_file=None))
 
         assert result.status == "failed"
         assert result.document_count == 0
@@ -309,6 +309,6 @@ class TestIngestDocuments:
         mock_pipeline.run.return_value = []
         mock_create_pipeline.return_value = mock_pipeline
 
-        ingest_documents(Path("/fake/dir"), Settings())
+        ingest_documents(Path("/fake/dir"), Settings(_env_file=None))
 
         mock_pipeline.run.assert_called_once_with(documents=mock_docs)

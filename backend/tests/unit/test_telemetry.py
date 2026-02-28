@@ -45,24 +45,24 @@ class TestConfigureTelemetry:
     """Tests for telemetry initialization."""
 
     def test_sets_tracer_provider(self) -> None:
-        settings = Settings(otel_enabled=True, otel_service_name="test-svc")
+        settings = Settings(_env_file=None, otel_enabled=True, otel_service_name="test-svc")
         configure_telemetry(settings)
         provider = trace.get_tracer_provider()
         assert isinstance(provider, TracerProvider)
 
     def test_sets_meter_provider(self) -> None:
-        settings = Settings(otel_enabled=True, otel_service_name="test-svc")
+        settings = Settings(_env_file=None, otel_enabled=True, otel_service_name="test-svc")
         configure_telemetry(settings)
         provider = metrics.get_meter_provider()
         assert isinstance(provider, MeterProvider)
 
     def test_disabled_does_not_create_metrics(self) -> None:
-        settings = Settings(otel_enabled=False)
+        settings = Settings(_env_file=None, otel_enabled=False)
         configure_telemetry(settings)
         assert get_metrics() is None
 
     def test_creates_app_metrics(self) -> None:
-        settings = Settings(otel_enabled=True, otel_service_name="test-svc")
+        settings = Settings(_env_file=None, otel_enabled=True, otel_service_name="test-svc")
         configure_telemetry(settings)
         m = get_metrics()
         assert m is not None
@@ -76,7 +76,7 @@ class TestShutdownTelemetry:
     """Tests for telemetry shutdown."""
 
     def test_shutdown_clears_app_metrics(self) -> None:
-        settings = Settings(otel_enabled=True, otel_service_name="test-svc")
+        settings = Settings(_env_file=None, otel_enabled=True, otel_service_name="test-svc")
         configure_telemetry(settings)
         assert get_metrics() is not None
         shutdown_telemetry()
@@ -89,18 +89,31 @@ class TestShutdownTelemetry:
 class TestRecordQuery:
     """Tests for query metric recording."""
 
-    def test_records_query_with_status(self) -> None:
-        settings = Settings(otel_enabled=True, otel_service_name="test-svc")
+    def test_records_query_increments_counter(self) -> None:
+        settings = Settings(_env_file=None, otel_enabled=True, otel_service_name="test-svc")
         configure_telemetry(settings)
-        record_query(latency_seconds=0.5, status="success", cached=False)
+        m = get_metrics()
+        assert m is not None
+        with patch.object(m, "query_counter") as mock_counter, patch.object(m, "query_latency") as mock_latency:
+            record_query(latency_seconds=0.5, status="success", cached=False)
+            mock_counter.add.assert_called_once_with(1, {"status": "success"})
+            mock_latency.record.assert_called_once_with(0.5, {"status": "success"})
 
-    def test_records_cached_query(self) -> None:
-        settings = Settings(otel_enabled=True, otel_service_name="test-svc")
+    def test_records_cached_query_increments_cache_hits(self) -> None:
+        settings = Settings(_env_file=None, otel_enabled=True, otel_service_name="test-svc")
         configure_telemetry(settings)
-        record_query(latency_seconds=0.1, status="success", cached=True)
+        m = get_metrics()
+        assert m is not None
+        with (
+            patch.object(m, "cache_hits") as mock_cache,
+            patch.object(m, "query_counter"),
+            patch.object(m, "query_latency"),
+        ):
+            record_query(latency_seconds=0.1, status="success", cached=True)
+            mock_cache.add.assert_called_once_with(1)
 
     def test_noop_when_disabled(self) -> None:
-        settings = Settings(otel_enabled=False)
+        settings = Settings(_env_file=None, otel_enabled=False)
         configure_telemetry(settings)
         record_query(latency_seconds=0.5, status="success", cached=False)
 
@@ -108,13 +121,18 @@ class TestRecordQuery:
 class TestRecordIngestion:
     """Tests for ingestion metric recording."""
 
-    def test_records_ingestion(self) -> None:
-        settings = Settings(otel_enabled=True, otel_service_name="test-svc")
+    def test_records_ingestion_increments_counters(self) -> None:
+        settings = Settings(_env_file=None, otel_enabled=True, otel_service_name="test-svc")
         configure_telemetry(settings)
-        record_ingestion(document_count=5, node_count=25, status="success")
+        m = get_metrics()
+        assert m is not None
+        with patch.object(m, "ingestion_counter") as mock_counter, patch.object(m, "ingestion_documents") as mock_docs:
+            record_ingestion(document_count=5, node_count=25, status="success")
+            mock_counter.add.assert_called_once_with(1, {"status": "success"})
+            mock_docs.add.assert_called_once_with(30, {"status": "success"})
 
     def test_noop_when_disabled(self) -> None:
-        settings = Settings(otel_enabled=False)
+        settings = Settings(_env_file=None, otel_enabled=False)
         configure_telemetry(settings)
         record_ingestion(document_count=5, node_count=25, status="success")
 
@@ -126,7 +144,7 @@ class TestGetMetrics:
         assert get_metrics() is None
 
     def test_returns_metrics_when_initialized(self) -> None:
-        settings = Settings(otel_enabled=True, otel_service_name="test-svc")
+        settings = Settings(_env_file=None, otel_enabled=True, otel_service_name="test-svc")
         configure_telemetry(settings)
         assert get_metrics() is not None
 
@@ -135,7 +153,7 @@ class TestAddTraceContext:
     """Tests for structlog trace context processor."""
 
     def test_adds_trace_and_span_id_when_active(self) -> None:
-        settings = Settings(otel_enabled=True, otel_service_name="test-svc")
+        settings = Settings(_env_file=None, otel_enabled=True, otel_service_name="test-svc")
         configure_telemetry(settings)
         tracer = trace.get_tracer("test")
         with tracer.start_as_current_span("test-span"):
@@ -156,7 +174,7 @@ class TestInstrumentApp:
     """Tests for FastAPI auto-instrumentation."""
 
     def test_instrument_app_called_when_enabled(self) -> None:
-        otel_settings = Settings(otel_enabled=True, otel_service_name="test-svc")
+        otel_settings = Settings(_env_file=None, otel_enabled=True, otel_service_name="test-svc")
         with (
             patch("backend.src.core.telemetry.FastAPIInstrumentor") as mock_instrumentor,
             patch("backend.src.api.main.get_settings", return_value=otel_settings),
