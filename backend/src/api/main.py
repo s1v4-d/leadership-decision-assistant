@@ -20,6 +20,7 @@ from backend.src.api.routes import router
 from backend.src.core.config import Settings, get_settings
 from backend.src.core.log import configure_logging
 from backend.src.core.security import PromptInjectionError
+from backend.src.core.telemetry import configure_telemetry, instrument_fastapi, shutdown_telemetry
 from backend.src.models.schemas import ErrorResponse
 
 if TYPE_CHECKING:
@@ -33,8 +34,10 @@ async def lifespan(_app: FastAPI) -> AsyncGenerator[None]:
     """Application startup and shutdown lifecycle."""
     settings = get_settings()
     configure_logging(log_level=settings.log_level, log_format=settings.log_format)
+    configure_telemetry(settings)
     logger.info("app_starting", app_name=settings.app_name)
     yield
+    shutdown_telemetry()
     logger.info("app_shutting_down")
 
 
@@ -53,6 +56,7 @@ def create_app() -> FastAPI:
     _add_middleware(app, settings)
     _add_exception_handlers(app)
     _include_routers(app)
+    instrument_fastapi(app, settings)
 
     return app
 
