@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import structlog
+from llama_index.core import SQLDatabase
 from sqlalchemy import create_engine as sa_create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
@@ -16,6 +17,8 @@ if TYPE_CHECKING:
     from backend.src.core.config import Settings
 
 logger = structlog.get_logger(__name__)
+
+_DEFAULT_STRUCTURED_TABLES = ["business_metrics", "collections"]
 
 
 def create_sync_engine(settings: Settings) -> Engine:
@@ -34,3 +37,17 @@ def create_tables(engine: Engine) -> None:
 def create_session_factory(engine: Engine) -> sessionmaker[Session]:
     """Return a sessionmaker bound to the given engine."""
     return sessionmaker(bind=engine)
+
+
+def create_sql_database(
+    settings: Settings,
+    *,
+    include_tables: list[str] | None = None,
+) -> SQLDatabase:
+    """Create a LlamaIndex SQLDatabase wrapping the structured PostgreSQL tables."""
+    engine = create_sync_engine(settings)
+    return SQLDatabase(
+        engine,
+        include_tables=include_tables or _DEFAULT_STRUCTURED_TABLES,
+        sample_rows_in_table_info=3,
+    )
