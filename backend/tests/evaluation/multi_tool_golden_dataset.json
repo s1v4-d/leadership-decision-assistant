@@ -1,0 +1,47 @@
+[
+  {
+    "user_input": "What is Q4 2025 revenue and how does it compare to our strategic targets?",
+    "retrieved_contexts": [
+      "The strategic plan targets $1.2M quarterly revenue by Q4 2025, representing 20% year-over-year growth from the $1.0M baseline.",
+      "SQL Result: Q4 2025 Revenue = $1,250,000 USD (source: business_metrics table)"
+    ],
+    "response": "Q4 2025 revenue is $1,250,000, which exceeds the strategic target of $1.2M by approximately 4.2%. This represents strong performance against the 20% year-over-year growth target from the $1.0M baseline.",
+    "reference": "Q4 2025 revenue is $1.25M, exceeding the $1.2M strategic target by 4.2%, surpassing the 20% YoY growth goal."
+  },
+  {
+    "user_input": "What is our current headcount and what does HR policy say about hiring targets?",
+    "retrieved_contexts": [
+      "The HR strategic plan targets 350 full-time employees by end of Q4 2025, with priority hires in engineering (50 positions) and data science (20 positions).",
+      "SQL Result: Q4 2025 Headcount = 342 employees (source: business_metrics table)"
+    ],
+    "response": "Current headcount is 342 employees, which is 8 short of the Q4 2025 target of 350. The HR plan prioritizes engineering (50 positions) and data science (20 positions) roles.",
+    "reference": "Headcount is 342 vs 350 target (8 short). Priority hiring areas are engineering (50) and data science (20)."
+  },
+  {
+    "user_input": "How is customer satisfaction trending based on NPS scores?",
+    "retrieved_contexts": [
+      "The customer experience team reports that NPS improvements have been driven by faster response times and the new self-service portal launched in Q3.",
+      "SQL Result: Q4 2025 NPS Score = 72 points (source: business_metrics table)"
+    ],
+    "response": "The NPS score is 72 points in Q4 2025. Improvements have been driven by faster response times and the new self-service portal launched in Q3.",
+    "reference": "NPS is 72 in Q4 2025, improved by faster response times and Q3 self-service portal launch."
+  },
+  {
+    "user_input": "What was the revenue growth from Q3 to Q4 2025?",
+    "retrieved_contexts": [
+      "SQL Result: Q3 2025 Revenue = $1,100,000 USD; Q4 2025 Revenue = $1,250,000 USD (source: business_metrics table)"
+    ],
+    "response": "Revenue grew from $1,100,000 in Q3 to $1,250,000 in Q4 2025, an increase of $150,000 or approximately 13.6% quarter-over-quarter.",
+    "reference": "Revenue grew 13.6% QoQ from $1.1M (Q3) to $1.25M (Q4), a $150K increase."
+  },
+  {
+    "user_input": "What are the key risks to our strategic plan and how are financial metrics tracking?",
+    "retrieved_contexts": [
+      "The board risk committee identified three major risks: supply chain disruptions, 18% engineering attrition, and EU data privacy regulatory changes.",
+      "SQL Result: Q4 2025 Revenue = $1,250,000 (above target), Headcount = 342 (below target of 350)",
+      "The CFO noted currency fluctuations could impact international revenue by up to 5%."
+    ],
+    "response": "Key strategic risks include supply chain disruptions, 18% engineering attrition, and EU regulatory changes, plus potential 5% international revenue impact from currency fluctuations. Financial metrics are mixed: revenue ($1.25M) exceeds targets but headcount (342) is below the 350 target, partly due to the attrition risk.",
+    "reference": "Strategic risks: supply chain, 18% attrition, EU regulation, 5% FX risk. Revenue above target at $1.25M, headcount 8 below target at 342."
+  }
+]

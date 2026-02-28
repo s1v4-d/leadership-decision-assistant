@@ -28,19 +28,6 @@ class Collection(Base):
     )
 
 
-class Asset(Base):
-    """An ingested file belonging to a collection."""
-
-    __tablename__ = "assets"
-
-    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    collection_id: Mapped[str] = mapped_column(String(36), ForeignKey("collections.id"), nullable=False)
-    filename: Mapped[str] = mapped_column(String(512), nullable=False)
-    file_type: Mapped[str] = mapped_column(String(50), nullable=False)
-    metadata_: Mapped[str | None] = mapped_column("metadata_", Text, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
-
-
 class BusinessMetric(Base):
     """A structured KPI or metric from tabular data."""
 

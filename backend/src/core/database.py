@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 import structlog
 from llama_index.core import SQLDatabase
 from sqlalchemy import create_engine as sa_create_engine
+from sqlalchemy import text as sa_text
 from sqlalchemy.orm import Session, sessionmaker
 
 from backend.src.models.tables import Base
@@ -34,6 +35,20 @@ def create_tables(engine: Engine) -> None:
     logger.info("structured_tables_created")
 
 
+def ensure_schemas(engine: Engine, settings: Settings) -> None:
+    """Create the vector_store and structured PostgreSQL schemas if they don't exist.
+
+    This mirrors the talk2data dual-schema pattern where vector and structured
+    data live in separate namespaces within the same database.
+    """
+    schemas = [settings.postgres.vector_schema, settings.postgres.sql_schema]
+    with engine.connect() as conn:
+        for schema in schemas:
+            conn.execute(sa_text(f"CREATE SCHEMA IF NOT EXISTS {schema}"))
+        conn.commit()
+    logger.info("database_schemas_ensured", schemas=schemas)
+
+
 def create_session_factory(engine: Engine) -> sessionmaker[Session]:
     """Return a sessionmaker bound to the given engine."""
     return sessionmaker(bind=engine)
@@ -44,10 +59,15 @@ def create_sql_database(
     *,
     include_tables: list[str] | None = None,
 ) -> SQLDatabase:
-    """Create a LlamaIndex SQLDatabase wrapping the structured PostgreSQL tables."""
+    """Create a LlamaIndex SQLDatabase wrapping the structured PostgreSQL tables.
+
+    Uses a dedicated PostgreSQL schema (default: ``structured``) so that
+    business-metric tables live in a separate namespace from vector tables.
+    """
     engine = create_sync_engine(settings)
     return SQLDatabase(
         engine,
+        schema=settings.postgres.sql_schema,
         include_tables=include_tables or _DEFAULT_STRUCTURED_TABLES,
         sample_rows_in_table_info=3,
     )

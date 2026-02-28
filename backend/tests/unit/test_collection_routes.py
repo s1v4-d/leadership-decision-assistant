@@ -117,13 +117,6 @@ class TestListCollections:
         names = {c["name"] for c in data}
         assert names == {"first", "second"}
 
-    @pytest.mark.asyncio
-    async def test_list_collections_includes_asset_count(self, client: AsyncClient) -> None:
-        await client.post("/api/v1/collections", json={"name": "with-assets"})
-        response = await client.get("/api/v1/collections")
-        data = response.json()
-        assert data[0]["asset_count"] == 0
-
 
 class TestGetCollection:
     @pytest.mark.asyncio
@@ -137,21 +130,6 @@ class TestGetCollection:
     @pytest.mark.asyncio
     async def test_get_nonexistent_collection_returns_404(self, client: AsyncClient) -> None:
         response = await client.get("/api/v1/collections/nonexistent-id")
-        assert response.status_code == 404
-
-
-class TestListAssets:
-    @pytest.mark.asyncio
-    async def test_list_assets_empty(self, client: AsyncClient) -> None:
-        resp = await client.post("/api/v1/collections", json={"name": "empty-col"})
-        collection_id = resp.json()["id"]
-        response = await client.get(f"/api/v1/collections/{collection_id}/assets")
-        assert response.status_code == 200
-        assert response.json() == []
-
-    @pytest.mark.asyncio
-    async def test_list_assets_for_nonexistent_collection_returns_404(self, client: AsyncClient) -> None:
-        response = await client.get("/api/v1/collections/bad-id/assets")
         assert response.status_code == 404
 
 
@@ -186,5 +164,5 @@ class TestCollectionSchemas:
             json={"name": "schema-test", "description": "Testing schema"},
         )
         data = resp.json()
-        expected_keys = {"id", "name", "description", "vector_table", "asset_count", "created_at", "updated_at"}
+        expected_keys = {"id", "name", "description", "vector_table", "created_at", "updated_at"}
         assert set(data.keys()) == expected_keys

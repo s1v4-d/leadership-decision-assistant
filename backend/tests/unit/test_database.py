@@ -50,7 +50,6 @@ class TestCreateTables:
         inspector = inspect(engine)
         table_names = inspector.get_table_names()
         assert "collections" in table_names
-        assert "assets" in table_names
         assert "business_metrics" in table_names
 
     def test_create_tables_is_idempotent(self) -> None:

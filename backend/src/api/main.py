@@ -26,7 +26,7 @@ from backend.src.api.seed import (
     seed_sample_documents,
 )
 from backend.src.core.config import Settings, get_settings
-from backend.src.core.database import create_session_factory, create_sync_engine, create_tables
+from backend.src.core.database import create_session_factory, create_sync_engine, create_tables, ensure_schemas
 from backend.src.core.log import configure_logging
 from backend.src.core.security import PromptInjectionError
 from backend.src.core.telemetry import configure_telemetry, instrument_fastapi, shutdown_telemetry
@@ -48,6 +48,7 @@ async def lifespan(_app: FastAPI) -> AsyncGenerator[None]:
 
     try:
         engine = create_sync_engine(settings)
+        ensure_schemas(engine, settings)
         create_tables(engine)
         _app.state.session_factory = create_session_factory(engine)
     except Exception:

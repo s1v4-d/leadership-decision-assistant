@@ -148,7 +148,7 @@ class TestExecuteQueryWithCollection:
         settings = Settings(_env_file=None, openai_api_key="sk-test")
         execute_query("question", settings, table_name="vec_my_table")
 
-        mock_create_engine.assert_called_once_with(settings, table_name="vec_my_table")
+        mock_create_engine.assert_called_once_with(settings, table_name="vec_my_table", collection_id=None)
 
     @patch("backend.src.tools.rag_tool.create_query_engine")
     def test_uses_default_without_table_name(self, mock_create_engine: MagicMock) -> None:
@@ -164,7 +164,7 @@ class TestExecuteQueryWithCollection:
         settings = Settings(_env_file=None, openai_api_key="sk-test")
         execute_query("question", settings)
 
-        mock_create_engine.assert_called_once_with(settings, table_name=None)
+        mock_create_engine.assert_called_once_with(settings, table_name=None, collection_id=None)
 
 
 class TestQueryRequestCollectionId:
@@ -193,6 +193,12 @@ class TestCollectionIngestUsesVectorTable:
         settings = Settings(_env_file=None, openai_api_key="sk-test")
         mock_ingest.return_value = MagicMock(status="success", document_count=1, node_count=5)
 
-        _run_collection_ingestion(tmp_path, settings, vector_table="vec_my_collection")
+        extra_metadata = {"collection_id": "col-abc"}
+        _run_collection_ingestion(tmp_path, settings, "vec_my_collection", extra_metadata)
 
-        mock_ingest.assert_called_once_with(tmp_path, settings, table_name="vec_my_collection")
+        mock_ingest.assert_called_once_with(
+            tmp_path,
+            settings,
+            table_name="vec_my_collection",
+            extra_metadata=extra_metadata,
+        )

@@ -29,7 +29,12 @@ _HNSW_DEFAULTS = {
 
 
 def create_vector_store(settings: Settings, *, table_name: str | None = None) -> PGVectorStore:
-    """Create a PGVectorStore, optionally targeting a specific collection table."""
+    """Create a PGVectorStore, optionally targeting a specific collection table.
+
+    Uses a dedicated PostgreSQL schema (default: ``vector_store``) so that
+    vector tables live in a separate namespace from structured/SQL tables
+    — mirroring the dual-schema pattern from talk2data.
+    """
     pg = settings.postgres
     return PGVectorStore.from_params(
         database=pg.database,
@@ -38,6 +43,7 @@ def create_vector_store(settings: Settings, *, table_name: str | None = None) ->
         port=str(pg.port),
         user=pg.user,
         table_name=table_name or pg.vector_table,
+        schema_name=pg.vector_schema,
         embed_dim=settings.embedding_dimension,
         hnsw_kwargs=_HNSW_DEFAULTS,
     )
@@ -57,10 +63,29 @@ def create_ingestion_pipeline(settings: Settings, *, table_name: str | None = No
     )
 
 
-def ingest_documents(directory: Path, settings: Settings, *, table_name: str | None = None) -> IngestionResult:
-    """Load documents from directory, run through ingestion pipeline, and store vectors."""
+def ingest_documents(
+    directory: Path,
+    settings: Settings,
+    *,
+    table_name: str | None = None,
+    extra_metadata: dict[str, str] | None = None,
+) -> IngestionResult:
+    """Load documents from directory, run through ingestion pipeline, and store vectors.
+
+    When *extra_metadata* is supplied (e.g. ``{"collection_id": "..."}``),
+    those key/values are merged into every document's metadata so that
+    downstream retrieval can filter by collection or asset.
+    """
     try:
         documents = load_documents(directory)
+
+        if extra_metadata:
+            for doc in documents:
+                doc.metadata.update(extra_metadata)
+                file_name = doc.metadata.get("file_name") or doc.metadata.get("filename", "")
+                if file_name:
+                    doc.metadata.setdefault("asset_id", file_name)
+
         pipeline = create_ingestion_pipeline(settings, table_name=table_name)
         nodes = pipeline.run(documents=documents)
         logger.info(

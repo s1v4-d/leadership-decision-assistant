@@ -27,6 +27,7 @@ class TestCreateSqlDatabase:
 
         mock_sql_db_cls.assert_called_once_with(
             mock_engine,
+            schema="structured",
             include_tables=["business_metrics"],
             sample_rows_in_table_info=3,
         )
