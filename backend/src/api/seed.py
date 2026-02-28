@@ -32,7 +32,9 @@ def _table_has_rows(engine: Engine, table_name: str) -> bool:
 def _vector_store_has_data(settings: Settings) -> bool:
     """Return True if the pgvector table exists and contains rows."""
     store = create_vector_store(settings)
-    engine: Engine = store._engine  # noqa: SLF001
+    engine = store._engine  # noqa: SLF001
+    if engine is None:
+        return False
     inspector = inspect(engine)
     if store.table_name not in inspector.get_table_names():  # type: ignore[union-attr]
         return False
