@@ -85,6 +85,10 @@ class Settings(BaseSettings):
     embedding_model: str = "text-embedding-3-large"
     embedding_dimension: int = 3072
 
+    otel_enabled: bool = False
+    otel_service_name: str = "leadership-insight-agent"
+    otel_exporter_endpoint: str = ""
+
     redis: RedisSettings = RedisSettings()
     postgres: PostgresSettings = PostgresSettings()
     rag: RAGSettings = RAGSettings()
