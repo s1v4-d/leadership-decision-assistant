@@ -20,7 +20,7 @@ class TestCheckHealth:
     def test_returns_true_when_healthy(self, mock_get: MagicMock) -> None:
         mock_get.return_value = MagicMock(
             status_code=200,
-            json=MagicMock(return_value={"status": "healthy"}),
+            json=MagicMock(return_value={"status": "ok"}),
         )
 
         result = check_health("http://localhost:8000")

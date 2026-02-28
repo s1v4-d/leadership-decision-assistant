@@ -8,6 +8,7 @@ on:
       - "ui/**"
       - "pyproject.toml"
       - "uv.lock"
+      - "infra/terraform/**"
       - ".github/workflows/ci.yml"
   pull_request:
     branches: [main]
@@ -16,6 +17,7 @@ on:
       - "ui/**"
       - "pyproject.toml"
       - "uv.lock"
+      - "infra/terraform/**"
       - ".github/workflows/ci.yml"
 
 concurrency:
@@ -75,3 +77,21 @@ jobs:
       - uses: actions/checkout@v4
       - name: Build Docker image
         run: docker build -f infra/docker/Dockerfile -t leadership-decision-assistant:ci .
+
+  terraform:
+    name: Terraform Validate
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: infra/terraform
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "~> 1.9"
+      - name: Terraform fmt
+        run: terraform fmt -check -diff -recursive
+      - name: Terraform init
+        run: terraform init -backend=false
+      - name: Terraform validate
+        run: terraform validate

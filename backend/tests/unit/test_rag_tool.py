@@ -65,19 +65,6 @@ class TestCreateQueryIndex:
         mock_from_vs.assert_called_once_with(vector_store=mock_vs)
         assert result is mock_index
 
-    @patch("backend.src.tools.rag_tool.VectorStoreIndex.from_vector_store")
-    @patch("backend.src.tools.rag_tool.create_vector_store")
-    def test_returns_vector_store_index(self, mock_create_vs: MagicMock, mock_from_vs: MagicMock) -> None:
-        from backend.src.tools.rag_tool import create_query_index
-
-        settings = Settings(_env_file=None, openai_api_key="sk-test")
-        mock_create_vs.return_value = MagicMock()
-        mock_from_vs.return_value = MagicMock()
-
-        index = create_query_index(settings)
-
-        assert index is not None
-
 
 class TestCreateQueryEngine:
     @patch("backend.src.tools.rag_tool.create_query_index")
@@ -214,13 +201,14 @@ class TestExecuteQuery:
             sources.append(s)
 
         mock_response = MagicMock()
-        mock_response.response = "combined answer"
+        mock_response.__str__ = MagicMock(return_value="combined answer")
         mock_response.source_nodes = sources
         mock_engine.query.return_value = mock_response
 
         settings = Settings(_env_file=None, openai_api_key="sk-test")
         result = execute_query("query", settings)
 
+        assert result.answer == "combined answer"
         assert len(result.source_nodes) == 3
         assert result.source_nodes[0].score == pytest.approx(0.9)
         assert result.source_nodes[2].score == pytest.approx(0.7)

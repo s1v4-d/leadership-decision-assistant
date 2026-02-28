@@ -280,7 +280,7 @@ class TestSSEStreaming:
 
     @patch("backend.src.api.query_routes._get_redis_client", return_value=None)
     @patch("backend.src.api.query_routes.execute_query")
-    async def test_stream_returns_cached_if_available(
+    async def test_stream_cache_miss_still_executes_query(
         self, mock_execute: MagicMock, mock_redis: MagicMock, app: FastAPI
     ) -> None:
         """Streaming with cache miss still works; execute is called."""
@@ -303,7 +303,9 @@ class TestRateLimiting:
 
     @patch("backend.src.api.query_routes._get_redis_client", return_value=None)
     @patch("backend.src.api.query_routes.execute_query")
-    async def test_rate_limiter_is_applied(self, mock_execute: MagicMock, mock_redis: MagicMock, app: FastAPI) -> None:
+    async def test_single_request_under_limit_succeeds(
+        self, mock_execute: MagicMock, mock_redis: MagicMock, app: FastAPI
+    ) -> None:
         from backend.src.models.domain import QueryResult
 
         mock_execute.return_value = QueryResult(answer="ok", source_nodes=[])
@@ -313,3 +315,21 @@ class TestRateLimiting:
             resp = await client.post("/api/v1/query", json={"query": "rate test"})
 
         assert resp.status_code == 200
+
+    @patch("backend.src.api.query_routes._get_redis_client", return_value=None)
+    @patch("backend.src.api.query_routes.execute_query")
+    async def test_exceeding_rate_limit_returns_429(
+        self, mock_execute: MagicMock, mock_redis: MagicMock, app: FastAPI
+    ) -> None:
+        from backend.src.models.domain import QueryResult
+
+        mock_execute.return_value = QueryResult(answer="ok", source_nodes=[])
+
+        transport = ASGITransport(app=app)
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            statuses = []
+            for _ in range(25):
+                resp = await client.post("/api/v1/query", json={"query": "rate test"})
+                statuses.append(resp.status_code)
+
+        assert 429 in statuses, f"Expected at least one 429 response, got: {set(statuses)}"

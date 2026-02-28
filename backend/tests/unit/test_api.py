@@ -131,6 +131,7 @@ class TestMiddleware:
             },
         )
         assert "access-control-allow-origin" in response.headers
+        assert response.headers["access-control-allow-origin"] == "http://localhost:8501"
 
     async def test_request_id_header_in_response(self, client: httpx.AsyncClient) -> None:
         response = await client.get("/health")
@@ -150,7 +151,7 @@ class TestErrorHandling:
         response = await client.get("/nonexistent")
         assert response.status_code == 404
 
-    async def test_validation_error_returns_422(self, client: httpx.AsyncClient) -> None:
+    async def test_extra_query_params_ignored(self, client: httpx.AsyncClient) -> None:
         response = await client.get("/health", params={"unexpected": "param"})
         assert response.status_code == 200
 
@@ -158,17 +159,25 @@ class TestErrorHandling:
 class TestStructlogConfig:
     """Tests for structlog configuration."""
 
-    def test_configure_logging_does_not_raise(self) -> None:
+    def test_configure_logging_sets_processors(self) -> None:
+        import structlog
+
         from backend.src.core.log import configure_logging
 
         configure_logging(log_level="DEBUG", log_format="console")
+        config = structlog.get_config()
+        assert len(config["processors"]) > 0
 
-    def test_configure_logging_json_format(self) -> None:
+    def test_configure_logging_json_format_configures_structlog(self) -> None:
+        import structlog
+
         from backend.src.core.log import configure_logging
 
         configure_logging(log_level="INFO", log_format="json")
+        config = structlog.get_config()
+        assert config["wrapper_class"] is structlog.stdlib.BoundLogger
 
-    def test_get_logger_returns_logger(self) -> None:
+    def test_get_logger_returns_bound_logger(self) -> None:
         import structlog
 
         from backend.src.core.log import configure_logging
@@ -176,3 +185,5 @@ class TestStructlogConfig:
         configure_logging(log_level="DEBUG", log_format="console")
         logger = structlog.get_logger("test")
         assert logger is not None
+        assert hasattr(logger, "info")
+        assert hasattr(logger, "error")
