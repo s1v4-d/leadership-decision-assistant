@@ -17,6 +17,7 @@ from backend.src.agents.prompts import (
 from backend.src.core.llm_provider import create_llm
 from backend.src.models.domain import AgentResponse
 from backend.src.tools.rag_tool import create_query_engine
+from backend.src.tools.sql_tool import create_sql_query_tool
 
 if TYPE_CHECKING:
     from collections.abc import AsyncGenerator
@@ -57,14 +58,20 @@ def create_analysis_tool() -> FunctionTool:
     )
 
 
+def create_sql_tool(settings: Settings) -> QueryEngineTool:
+    """Create a QueryEngineTool wrapping the NL2SQL engine."""
+    return create_sql_query_tool(settings)
+
+
 def create_leadership_agent(settings: Settings) -> ReActAgent:
-    """Build a ReActAgent with RAG and analysis tools."""
+    """Build a ReActAgent with RAG, analysis, and SQL tools."""
     llm = create_llm(settings)
     rag_tool = create_rag_query_tool(settings)
     analysis_tool = create_analysis_tool()
+    sql_tool = create_sql_tool(settings)
 
     return ReActAgent(
-        tools=[rag_tool, analysis_tool],
+        tools=[rag_tool, analysis_tool, sql_tool],
         llm=llm,
         system_prompt=LEADERSHIP_SYSTEM_PROMPT,
     )

@@ -8,6 +8,7 @@ import structlog
 from llama_index.core.query_engine import NLSQLTableQueryEngine
 from llama_index.core.tools import QueryEngineTool
 
+from backend.src.agents.prompts import SQL_TOOL_DESCRIPTION
 from backend.src.core.database import create_sql_database
 from backend.src.models.domain import SqlQueryResult
 
@@ -17,12 +18,6 @@ if TYPE_CHECKING:
 logger = structlog.get_logger(__name__)
 
 _DEFAULT_SQL_TABLES = ["business_metrics"]
-
-SQL_TOOL_DESCRIPTION = (
-    "Query structured business data (KPIs, metrics, financial figures) "
-    "stored in SQL tables. Use for questions about specific numbers, "
-    "trends, comparisons, or any quantitative data."
-)
 
 
 def create_sql_query_engine(
