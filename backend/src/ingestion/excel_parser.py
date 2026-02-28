@@ -4,10 +4,17 @@ from __future__ import annotations
 
 import csv
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import structlog
 from openpyxl import load_workbook
+
+from backend.src.models.tables import BusinessMetric
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from sqlalchemy.orm import Session
 
 logger = structlog.get_logger(__name__)
 
@@ -57,3 +64,36 @@ def parse_csv_file(filepath: str | Path) -> list[ParsedRow]:
 
     logger.info("csv_parsed", filepath=str(path), row_count=len(rows))
     return rows
+
+
+def ingest_excel_to_business_metrics(
+    filepath: str | Path,
+    session: Session,
+    collection_id: str,
+) -> int:
+    """Parse an Excel file and insert rows as BusinessMetric records."""
+    rows = parse_excel_file(filepath)
+    if not rows:
+        return 0
+
+    for row in rows:
+        metric = BusinessMetric(
+            collection_id=collection_id,
+            metric_name=str(row.get("metric_name", "")),
+            metric_value=float(row.get("metric_value", 0)),
+            unit=row.get("unit"),
+            period=row.get("period"),
+            category=row.get("category"),
+            source_file=str(filepath),
+        )
+        session.add(metric)
+
+    session.commit()
+    logger.info("excel_metrics_ingested", filepath=str(filepath), count=len(rows))
+    return len(rows)
+
+
+PARSER_REGISTRY: dict[str, Callable[..., list[ParsedRow]]] = {
+    ".xlsx": parse_excel_file,
+    ".csv": parse_csv_file,
+}

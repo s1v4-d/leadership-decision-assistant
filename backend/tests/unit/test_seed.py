@@ -18,6 +18,53 @@ def settings() -> Settings:
     )
 
 
+class TestEnsureDefaultCollection:
+    @patch("backend.src.api.seed.select")
+    def test_returns_existing_collection(self, mock_select: MagicMock) -> None:
+        from backend.src.api.seed import _ensure_default_collection
+
+        existing = MagicMock()
+        existing.id = "existing-id"
+        mock_session = MagicMock()
+        mock_session.execute.return_value.scalar_one_or_none.return_value = existing
+
+        result = _ensure_default_collection(mock_session)
+
+        assert result is existing
+        mock_session.add.assert_not_called()
+
+    @patch("backend.src.api.seed.select")
+    def test_creates_collection_when_missing(self, mock_select: MagicMock) -> None:
+        from backend.src.api.seed import _ensure_default_collection
+
+        mock_session = MagicMock()
+        mock_session.execute.return_value.scalar_one_or_none.return_value = None
+
+        result = _ensure_default_collection(mock_session)
+
+        mock_session.add.assert_called_once()
+        mock_session.commit.assert_called_once()
+        assert result.name == "leadership"
+
+
+class TestBusinessMetricsHasData:
+    def test_returns_true_when_rows_exist(self) -> None:
+        from backend.src.api.seed import _business_metrics_has_data
+
+        mock_session = MagicMock()
+        mock_session.execute.return_value.scalar_one_or_none.return_value = 1
+
+        assert _business_metrics_has_data(mock_session) is True
+
+    def test_returns_false_when_empty(self) -> None:
+        from backend.src.api.seed import _business_metrics_has_data
+
+        mock_session = MagicMock()
+        mock_session.execute.return_value.scalar_one_or_none.return_value = None
+
+        assert _business_metrics_has_data(mock_session) is False
+
+
 class TestSeedSampleDocuments:
     @patch("backend.src.api.seed.ingest_documents")
     @patch("backend.src.api.seed._vector_store_has_data", return_value=False)
@@ -90,6 +137,78 @@ class TestSeedSampleDocuments:
 
         seed_sample_documents(settings)
         mock_ingest.assert_called_once()
+
+
+class TestSeedBusinessMetrics:
+    @patch("backend.src.api.seed.ingest_excel_to_business_metrics", return_value=72)
+    @patch("backend.src.api.seed._business_metrics_has_data", return_value=False)
+    @patch("backend.src.api.seed._find_excel_files")
+    def test_seeds_metrics_from_excel(
+        self,
+        mock_find: MagicMock,
+        mock_has_data: MagicMock,
+        mock_ingest: MagicMock,
+    ) -> None:
+        from backend.src.api.seed import seed_business_metrics
+
+        mock_session = MagicMock()
+        mock_find.return_value = [Path("kpis.xlsx")]
+
+        seed_business_metrics(mock_session, "coll-id")
+
+        mock_has_data.assert_called_once_with(mock_session)
+        mock_ingest.assert_called_once_with(Path("kpis.xlsx"), mock_session, "coll-id")
+
+    @patch("backend.src.api.seed.ingest_excel_to_business_metrics")
+    @patch("backend.src.api.seed._business_metrics_has_data", return_value=True)
+    def test_skips_when_metrics_exist(
+        self,
+        mock_has_data: MagicMock,
+        mock_ingest: MagicMock,
+    ) -> None:
+        from backend.src.api.seed import seed_business_metrics
+
+        mock_session = MagicMock()
+
+        seed_business_metrics(mock_session, "coll-id")
+
+        mock_has_data.assert_called_once_with(mock_session)
+        mock_ingest.assert_not_called()
+
+    @patch("backend.src.api.seed.ingest_excel_to_business_metrics", side_effect=Exception("parse fail"))
+    @patch("backend.src.api.seed._business_metrics_has_data", return_value=False)
+    @patch("backend.src.api.seed._find_excel_files")
+    def test_handles_failure_gracefully(
+        self,
+        mock_find: MagicMock,
+        mock_has_data: MagicMock,
+        mock_ingest: MagicMock,
+    ) -> None:
+        from backend.src.api.seed import seed_business_metrics
+
+        mock_session = MagicMock()
+        mock_find.return_value = [Path("kpis.xlsx")]
+
+        seed_business_metrics(mock_session, "coll-id")
+
+        mock_ingest.assert_called_once()
+
+    @patch("backend.src.api.seed.ingest_excel_to_business_metrics")
+    @patch("backend.src.api.seed._business_metrics_has_data", return_value=False)
+    @patch("backend.src.api.seed._find_excel_files", return_value=[])
+    def test_skips_when_no_excel_files(
+        self,
+        mock_find: MagicMock,
+        mock_has_data: MagicMock,
+        mock_ingest: MagicMock,
+    ) -> None:
+        from backend.src.api.seed import seed_business_metrics
+
+        mock_session = MagicMock()
+
+        seed_business_metrics(mock_session, "coll-id")
+
+        mock_ingest.assert_not_called()
 
 
 class TestVectorStoreHasData:

@@ -1,0 +1,50 @@
+Quarterly Business Review — Q4 2025
+
+Prepared by: Office of the CFO
+Date: January 15, 2026
+
+FINANCIAL PERFORMANCE
+
+Total revenue for Q4 2025 reached $127.3M, exceeding the forecast of $118M by 7.9%.
+Gross margin improved to 64.2% from 61.8% in Q3, driven by operational efficiencies
+in the supply chain and renegotiated vendor contracts.
+
+Operating expenses increased 4.1% quarter-over-quarter to $62.4M, primarily due to
+headcount additions in engineering (+18 FTEs) and sales (+12 FTEs).
+
+EBITDA margin: 28.7% (target: 26.0%)
+Free cash flow: $31.2M (target: $24.0M)
+Net revenue retention: 118% (target: 110%)
+
+PRODUCT HIGHLIGHTS
+
+The Enterprise Analytics Platform (EAP) v3.2 shipped on schedule in November,
+contributing $8.4M in incremental ARR. Customer adoption metrics show 73% of
+enterprise accounts activated the new predictive insights module within 30 days.
+
+The AI Assistant feature (beta) received positive feedback from 92% of pilot
+participants. Full GA is planned for March 2026.
+
+CUSTOMER METRICS
+
+Total customers: 2,847 (+142 net new in Q4)
+Enterprise accounts (>$100K ARR): 312 (+28 net new)
+Average contract value: $184K (up from $167K in Q3)
+Churn rate: 2.1% (improved from 2.8% in Q3)
+NPS: 67 (up from 62 in Q3)
+
+WORKFORCE
+
+Total headcount: 1,243 (up from 1,213)
+Voluntary attrition: 3.2% annualized
+Diversity: 41% women in leadership roles (target: 45% by end of 2026)
+Employee engagement score: 4.2/5.0
+
+OUTLOOK FOR Q1 2026
+
+Management expects Q1 revenue between $130M and $135M, with continued margin
+expansion as cloud migration savings begin to materialize. The APAC launch
+in Singapore is on track for late February.
+
+Key risks include potential tariff impacts on hardware procurement and
+competitive pressure from CloudNext's new enterprise offering launched in December.
