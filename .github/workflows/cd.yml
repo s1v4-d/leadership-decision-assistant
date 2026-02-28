@@ -16,6 +16,8 @@ concurrency:
   group: cd-${{ github.event.inputs.environment }}
   cancel-in-progress: false
 
+permissions: {}
+
 env:
   AWS_REGION: us-east-1
   ECR_REPOSITORY: leadership-agent
