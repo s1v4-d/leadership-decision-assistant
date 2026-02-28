@@ -71,3 +71,39 @@ class AgentQueryResponse(BaseModel):
 
     answer: str
     tool_calls_count: int = 0
+
+
+class CollectionCreate(BaseModel):
+    """Request schema for POST /api/v1/collections."""
+
+    name: str = Field(min_length=1, max_length=255)
+    description: str | None = None
+
+
+class CollectionResponse(BaseModel):
+    """Response schema for a collection."""
+
+    id: str
+    name: str
+    description: str | None = None
+    vector_table: str
+    asset_count: int = 0
+    created_at: str
+    updated_at: str
+
+
+class AssetResponse(BaseModel):
+    """Response schema for an asset."""
+
+    id: str
+    filename: str
+    file_type: str
+    created_at: str
+
+
+class AssetUploadResponse(BaseModel):
+    """Response schema for POST /api/v1/collections/{id}/assets."""
+
+    status: str
+    collection_id: str
+    file_count: int
