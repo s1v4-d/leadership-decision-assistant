@@ -57,3 +57,17 @@ class QueryResponse(BaseModel):
     answer: str
     sources: list[SourceNodeResponse] = []
     cached: bool = False
+
+
+class AgentRequest(BaseModel):
+    """Request schema for POST /api/v1/agent."""
+
+    query: str = Field(min_length=1, max_length=2000)
+    stream: bool = False
+
+
+class AgentQueryResponse(BaseModel):
+    """Response schema for POST /api/v1/agent."""
+
+    answer: str
+    tool_calls_count: int = 0

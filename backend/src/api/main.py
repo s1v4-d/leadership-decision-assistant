@@ -14,9 +14,12 @@ from starlette.middleware.cors import CORSMiddleware
 from starlette.middleware.gzip import GZipMiddleware
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
+from backend.src.agents.leadership_agent import create_leadership_agent
+from backend.src.api.agent_routes import agent_router, set_agent
 from backend.src.api.ingest_routes import ingest_router
 from backend.src.api.query_routes import limiter, query_router
 from backend.src.api.routes import router
+from backend.src.api.seed import seed_sample_documents
 from backend.src.core.config import Settings, get_settings
 from backend.src.core.log import configure_logging
 from backend.src.core.security import PromptInjectionError
@@ -36,6 +39,19 @@ async def lifespan(_app: FastAPI) -> AsyncGenerator[None]:
     configure_logging(log_level=settings.log_level, log_format=settings.log_format)
     configure_telemetry(settings)
     logger.info("app_starting", app_name=settings.app_name)
+
+    try:
+        agent = create_leadership_agent(settings)
+        set_agent(agent)
+        logger.info("agent_initialized")
+    except Exception:
+        logger.exception("agent_init_failed")
+
+    try:
+        seed_sample_documents(settings)
+    except Exception:
+        logger.exception("seed_failed")
+
     yield
     shutdown_telemetry()
     logger.info("app_shutting_down")
@@ -137,3 +153,4 @@ def _include_routers(app: FastAPI) -> None:
     app.include_router(router)
     app.include_router(ingest_router)
     app.include_router(query_router)
+    app.include_router(agent_router)

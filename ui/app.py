@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 import os
 from typing import Any
 
@@ -12,8 +11,8 @@ import streamlit as st
 from ui.api_client import (
     check_health,
     ingest_documents,
-    query_documents,
-    query_documents_stream,
+    query_agent,
+    query_agent_stream,
 )
 
 BACKEND_URL = os.getenv("BACKEND_URL", "http://localhost:8000")
@@ -49,19 +48,16 @@ def _handle_http_error(exc: httpx.HTTPStatusError) -> None:
 
 
 def _handle_streaming_query(prompt: str) -> None:
-    """Handle a streaming query with real-time display."""
+    """Handle a streaming agent query with real-time display."""
     answer_text = ""
-    sources: list[dict[str, Any]] = []
 
     try:
         placeholder = st.empty()
-        with st.spinner("Searching documents..."):
-            for event_type, data in query_documents_stream(BACKEND_URL, prompt):
+        with st.spinner("Agent is thinking..."):
+            for event_type, data in query_agent_stream(BACKEND_URL, prompt):
                 if event_type == "answer":
-                    answer_text = data
+                    answer_text += data
                     placeholder.markdown(answer_text)
-                elif event_type == "sources":
-                    sources = json.loads(data) if data else []
                 elif event_type == "done":
                     break
 
@@ -69,10 +65,7 @@ def _handle_streaming_query(prompt: str) -> None:
             answer_text = "No answer received from the agent."
             placeholder.markdown(answer_text)
 
-        if sources:
-            _render_sources(sources)
-
-        st.session_state.messages.append({"role": "assistant", "content": answer_text, "sources": sources})
+        st.session_state.messages.append({"role": "assistant", "content": answer_text})
     except httpx.HTTPStatusError as exc:
         _handle_http_error(exc)
     except httpx.HTTPError as exc:
@@ -82,22 +75,19 @@ def _handle_streaming_query(prompt: str) -> None:
 
 
 def _handle_standard_query(prompt: str) -> None:
-    """Handle a non-streaming query."""
+    """Handle a non-streaming agent query."""
     try:
-        with st.spinner("Searching documents..."):
-            result = query_documents(BACKEND_URL, prompt)
+        with st.spinner("Agent is thinking..."):
+            result = query_agent(BACKEND_URL, prompt)
 
         answer_text = result.get("answer", "No answer received.")
-        sources = result.get("sources", [])
-        cached = result.get("cached", False)
+        tool_calls = result.get("tool_calls_count", 0)
 
         st.markdown(answer_text)
-        if cached:
-            st.caption("📋 Cached response")
-        if sources:
-            _render_sources(sources)
+        if tool_calls:
+            st.caption(f"🔧 Agent used {tool_calls} tool call(s)")
 
-        st.session_state.messages.append({"role": "assistant", "content": answer_text, "sources": sources})
+        st.session_state.messages.append({"role": "assistant", "content": answer_text})
     except httpx.HTTPStatusError as exc:
         _handle_http_error(exc)
     except httpx.HTTPError as exc:
