@@ -140,6 +140,7 @@ ignore = [
 "backend/tests/**/*.py" = ["S101", "ANN", "D", "ARG", "PLR2004", "PLC0415"]
 "backend/src/core/llm_provider.py" = ["PLC0415"]
 "backend/src/core/security.py" = ["PLC0415"]
+"backend/src/core/telemetry.py" = ["PLC0415"]
 "ui/**/*.py" = ["T20", "ANN", "D"]
 
 [tool.ruff.lint.isort]
