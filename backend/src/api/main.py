@@ -20,7 +20,11 @@ from backend.src.api.collection_routes import collection_router
 from backend.src.api.ingest_routes import ingest_router
 from backend.src.api.query_routes import limiter, query_router
 from backend.src.api.routes import router
-from backend.src.api.seed import seed_sample_documents
+from backend.src.api.seed import (
+    _ensure_default_collection,
+    seed_business_metrics,
+    seed_sample_documents,
+)
 from backend.src.core.config import Settings, get_settings
 from backend.src.core.database import create_session_factory, create_sync_engine, create_tables
 from backend.src.core.log import configure_logging
@@ -60,6 +64,14 @@ async def lifespan(_app: FastAPI) -> AsyncGenerator[None]:
         seed_sample_documents(settings)
     except Exception:
         logger.exception("seed_failed")
+
+    try:
+        session_factory = _app.state.session_factory
+        with session_factory() as session:
+            collection = _ensure_default_collection(session)
+            seed_business_metrics(session, collection.id)
+    except Exception:
+        logger.exception("seed_metrics_failed")
 
     yield
     shutdown_telemetry()
