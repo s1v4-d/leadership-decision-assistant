@@ -41,6 +41,7 @@ repos:
           - opentelemetry-exporter-prometheus>=0.48b0
           - opentelemetry-instrumentation-fastapi>=0.48b0
           - structlog>=24.4.0
+          - ragas>=0.2.0
         args: [--config-file=pyproject.toml]
         files: ^backend/src/
 

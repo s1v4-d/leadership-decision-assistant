@@ -1,0 +1,47 @@
+[
+  {
+    "user_input": "What are the key strategic priorities for Q4?",
+    "retrieved_contexts": [
+      "The executive committee identified three strategic priorities for Q4: expanding into the APAC market, reducing operational costs by 12%, and launching the next-generation product line. The APAC expansion is led by VP of International Sales.",
+      "Q4 budget allocations reflect a 30% increase in R&D spending to support the product launch, with a corresponding reduction in discretionary marketing spend."
+    ],
+    "response": "The key strategic priorities for Q4 are: 1) Expanding into the APAC market, 2) Reducing operational costs by 12%, and 3) Launching the next-generation product line. R&D spending has been increased by 30% to support the product launch.",
+    "reference": "The three Q4 strategic priorities are APAC market expansion, 12% operational cost reduction, and next-generation product line launch, supported by a 30% increase in R&D spending."
+  },
+  {
+    "user_input": "What risks were identified in the latest board meeting?",
+    "retrieved_contexts": [
+      "The board risk committee highlighted three major risks: supply chain disruptions due to geopolitical tensions, talent retention challenges in engineering with 18% attrition, and regulatory changes in data privacy across EU markets.",
+      "The CFO noted that currency fluctuations could impact international revenue by up to 5%, particularly in emerging markets."
+    ],
+    "response": "The latest board meeting identified several risks: supply chain disruptions from geopolitical tensions, engineering talent retention issues with 18% attrition rate, regulatory changes in EU data privacy, and potential 5% international revenue impact from currency fluctuations.",
+    "reference": "Key risks from the board meeting include supply chain disruptions, 18% engineering attrition, EU data privacy regulatory changes, and up to 5% international revenue impact from currency fluctuations."
+  },
+  {
+    "user_input": "How is the company addressing employee retention?",
+    "retrieved_contexts": [
+      "The HR department launched a comprehensive retention program including competitive salary adjustments averaging 8%, expanded remote work options, and a mentorship program pairing senior leaders with high-potential employees.",
+      "Engineering retention specifically has improved after introducing a technical career ladder with Staff and Principal Engineer levels, plus quarterly hackathon events."
+    ],
+    "response": "The company is addressing retention through salary adjustments averaging 8%, expanded remote work, a mentorship program, and engineering-specific initiatives including a technical career ladder with Staff and Principal Engineer levels and quarterly hackathons.",
+    "reference": "Retention efforts include 8% salary adjustments, remote work expansion, mentorship programs, and engineering career ladder with Staff/Principal levels plus hackathons."
+  },
+  {
+    "user_input": "What is the current status of the cloud migration project?",
+    "retrieved_contexts": [
+      "The cloud migration is 65% complete with 12 of 18 core services migrated to AWS. The remaining services include the legacy billing system and customer data warehouse, which are scheduled for Q1 next year.",
+      "Migration costs are tracking 10% under budget at $2.1M spent of the $2.8M allocated. Performance benchmarks show a 40% improvement in response times for migrated services."
+    ],
+    "response": "The cloud migration is 65% complete with 12 of 18 core services migrated to AWS. It's tracking 10% under budget at $2.1M of $2.8M allocated. Migrated services show 40% performance improvement. The legacy billing system and data warehouse remain, scheduled for Q1.",
+    "reference": "Cloud migration is 65% complete (12/18 services), 10% under budget ($2.1M/$2.8M), with 40% performance gains. Legacy billing and data warehouse scheduled for Q1."
+  },
+  {
+    "user_input": "What are the recommendations for improving cross-team collaboration?",
+    "retrieved_contexts": [
+      "The organizational effectiveness review recommends implementing shared OKRs across departments, establishing cross-functional tiger teams for strategic initiatives, and adopting a unified project management platform to replace the current five different tools.",
+      "Survey data shows that 67% of employees feel siloed within their teams. The top barriers cited are misaligned incentives, lack of shared communication channels, and competing priorities between departments."
+    ],
+    "response": "Recommendations for improving cross-team collaboration include: implementing shared OKRs, forming cross-functional tiger teams, and consolidating to a unified PM platform. Survey data shows 67% of employees feel siloed, with misaligned incentives and competing priorities as top barriers.",
+    "reference": "Key recommendations are shared OKRs, cross-functional tiger teams, and one PM platform. 67% of employees report feeling siloed due to misaligned incentives and competing priorities."
+  }
+]
