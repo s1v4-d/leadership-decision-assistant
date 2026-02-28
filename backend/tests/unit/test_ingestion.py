@@ -219,12 +219,14 @@ class TestCreateVectorStore:
 
 
 class TestCreateIngestionPipeline:
+    @patch("backend.src.ingestion.pipeline.create_embed_model")
     @patch("backend.src.ingestion.pipeline.create_vector_store")
     @patch("backend.src.ingestion.pipeline.IngestionPipeline")
-    def test_pipeline_includes_sentence_splitter(self, mock_pipeline_cls, mock_vs):
+    def test_pipeline_includes_sentence_splitter(self, mock_pipeline_cls, mock_vs, mock_embed):
         from backend.src.ingestion.pipeline import create_ingestion_pipeline
 
         mock_vs.return_value = MagicMock()
+        mock_embed.return_value = MagicMock()
         mock_pipeline_cls.return_value = MagicMock()
 
         create_ingestion_pipeline(Settings(_env_file=None))
@@ -234,28 +236,34 @@ class TestCreateIngestionPipeline:
         type_names = [type(t).__name__ for t in transformations]
         assert "SentenceSplitter" in type_names
 
+    @patch("backend.src.ingestion.pipeline.create_embed_model")
     @patch("backend.src.ingestion.pipeline.create_vector_store")
     @patch("backend.src.ingestion.pipeline.IngestionPipeline")
-    def test_pipeline_includes_embedding_model(self, mock_pipeline_cls, mock_vs):
+    def test_pipeline_uses_embed_model_factory(self, mock_pipeline_cls, mock_vs, mock_embed):
         from backend.src.ingestion.pipeline import create_ingestion_pipeline
 
+        mock_embed_instance = MagicMock()
+        mock_embed.return_value = mock_embed_instance
         mock_vs.return_value = MagicMock()
         mock_pipeline_cls.return_value = MagicMock()
 
-        create_ingestion_pipeline(Settings(_env_file=None))
+        settings = Settings(_env_file=None)
+        create_ingestion_pipeline(settings)
 
+        mock_embed.assert_called_once_with(settings)
         call_kwargs = mock_pipeline_cls.call_args[1]
         transformations = call_kwargs["transformations"]
-        type_names = [type(t).__name__ for t in transformations]
-        assert "OpenAIEmbedding" in type_names
+        assert mock_embed_instance in transformations
 
+    @patch("backend.src.ingestion.pipeline.create_embed_model")
     @patch("backend.src.ingestion.pipeline.create_vector_store")
     @patch("backend.src.ingestion.pipeline.IngestionPipeline")
-    def test_pipeline_connects_to_vector_store(self, mock_pipeline_cls, mock_vs):
+    def test_pipeline_connects_to_vector_store(self, mock_pipeline_cls, mock_vs, mock_embed):
         from backend.src.ingestion.pipeline import create_ingestion_pipeline
 
         mock_store = MagicMock()
         mock_vs.return_value = mock_store
+        mock_embed.return_value = MagicMock()
         mock_pipeline_cls.return_value = MagicMock()
 
         create_ingestion_pipeline(Settings(_env_file=None))

@@ -51,8 +51,8 @@ class TestSettings:
             openai_api_key=SecretStr("sk-test"),
         )
         assert settings.embedding_provider == "openai"
-        assert settings.embedding_model == "text-embedding-3-large"
-        assert settings.embedding_dimension == 3072
+        assert settings.embedding_model == "text-embedding-3-small"
+        assert settings.embedding_dimension == 1536
 
     def test_settings_openai_api_key_is_secret(self) -> None:
         settings = Settings(

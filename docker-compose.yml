@@ -29,7 +29,7 @@ services:
       - pgdata:/var/lib/postgresql/data
       - ./infra/docker/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES__USER:-leadership}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES__USER:-leadership} -d ${POSTGRES__DATABASE:-leadership_agent}"]
       interval: 10s
       timeout: 5s
       retries: 5

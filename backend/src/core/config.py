@@ -82,8 +82,8 @@ class Settings(BaseSettings):
     openai_api_key: SecretStr = SecretStr("sk-change-me")
 
     embedding_provider: str = "openai"
-    embedding_model: str = "text-embedding-3-large"
-    embedding_dimension: int = 3072
+    embedding_model: str = "text-embedding-3-small"
+    embedding_dimension: int = 1536
 
     otel_enabled: bool = False
     otel_service_name: str = "leadership-insight-agent"
