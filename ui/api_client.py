@@ -74,3 +74,27 @@ def ingest_documents(base_url: str, files: list[Any]) -> dict[str, Any]:
     response.raise_for_status()
     ingest_result: dict[str, Any] = response.json()
     return ingest_result
+
+
+def query_agent(base_url: str, query: str) -> dict[str, Any]:
+    """Send a non-streaming query to the agent endpoint."""
+    response = httpx.post(
+        f"{base_url}/api/v1/agent",
+        json={"query": query, "stream": False},
+        timeout=120.0,
+    )
+    response.raise_for_status()
+    result: dict[str, Any] = response.json()
+    return result
+
+
+def query_agent_stream(base_url: str, query: str) -> Generator[tuple[str, str], None, None]:
+    """Send a streaming query to the agent endpoint and yield SSE events."""
+    with httpx.stream(
+        "POST",
+        f"{base_url}/api/v1/agent",
+        json={"query": query, "stream": True},
+        timeout=120.0,
+    ) as response:
+        for chunk in response.iter_text():
+            yield from parse_sse_events(chunk)
