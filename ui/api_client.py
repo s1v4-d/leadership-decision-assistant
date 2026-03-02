@@ -38,7 +38,8 @@ def parse_sse_events(text: str) -> Generator[tuple[str, str], None, None]:
     event_type = ""
     data = ""
 
-    for line in text.split("\n"):
+    for raw_line in text.split("\n"):
+        line = raw_line.strip("\r")
         if line.startswith(":"):
             continue
         if line.startswith("event: "):
