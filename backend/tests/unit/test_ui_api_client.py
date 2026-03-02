@@ -108,6 +108,20 @@ class TestParseSseEvents:
 
         assert events == [("answer", "test")]
 
+    def test_handles_crlf_line_endings(self) -> None:
+        lines = "event: answer\r\ndata: Hello world\r\n\r\n"
+        events = list(parse_sse_events(lines))
+
+        assert events == [("answer", "Hello world")]
+
+    def test_handles_crlf_multiple_events(self) -> None:
+        lines = "event: answer\r\ndata: Hi\r\n\r\nevent: done\r\ndata: \r\n\r\n"
+        events = list(parse_sse_events(lines))
+
+        assert len(events) == 2
+        assert events[0] == ("answer", "Hi")
+        assert events[1] == ("done", "")
+
 
 class TestQueryDocumentsStream:
     @patch("ui.api_client.httpx.stream")
