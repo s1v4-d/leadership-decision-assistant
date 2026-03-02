@@ -10,6 +10,10 @@ services:
     environment:
       POSTGRES__HOST: postgres
       REDIS__URL: "redis://redis:6379/0"
+      DEBUG: "true"
+    volumes:
+      - ./backend:/app/backend
+      - ./ui:/app/ui
     depends_on:
       postgres:
         condition: service_healthy

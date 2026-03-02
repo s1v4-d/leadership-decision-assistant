@@ -13,7 +13,9 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 COPY . /app
 
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --locked --no-editable
+    uv sync --locked --no-install-project
+
+ENV PYTHONPATH="/app"
 
 # Stage 2: Minimal runtime image
 FROM python:3.12-slim AS runtime
@@ -26,7 +28,7 @@ RUN apt-get update \
 
 COPY --from=builder --chown=app:app /app /app
 WORKDIR /app
-ENV PATH="/app/.venv/bin:$PATH"
+ENV PATH="/app/.venv/bin:$PATH" PYTHONPATH="/app"
 
 RUN chmod +x infra/docker/start.sh
 
