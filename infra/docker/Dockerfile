@@ -3,7 +3,7 @@ FROM python:3.12-slim AS builder
 COPY --from=ghcr.io/astral-sh/uv:0.6.6 /uv /uvx /bin/
 
 WORKDIR /app
-ENV UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy UV_NO_DEV=1
+ENV UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy UV_NO_DEV=1 UV_HTTP_TIMEOUT=120
 
 RUN --mount=type=cache,target=/root/.cache/uv \
     --mount=type=bind,source=uv.lock,target=uv.lock \
