@@ -29,10 +29,17 @@ def create_sync_engine(settings: Settings) -> Engine:
     return sa_create_engine(url, pool_pre_ping=True)
 
 
-def create_tables(engine: Engine) -> None:
-    """Create all ORM tables idempotently via metadata.create_all."""
+def create_tables(engine: Engine, settings: Settings | None = None) -> None:
+    """Create all ORM tables idempotently via metadata.create_all.
+
+    When *settings* is provided the tables are placed into the configured
+    ``sql_schema`` (default ``structured``), keeping structured business
+    data separate from vector tables.
+    """
+    if settings is not None:
+        Base.metadata.schema = settings.postgres.sql_schema
     Base.metadata.create_all(engine)
-    logger.info("structured_tables_created")
+    logger.info("structured_tables_created", schema=Base.metadata.schema)
 
 
 def ensure_schemas(engine: Engine, settings: Settings) -> None:

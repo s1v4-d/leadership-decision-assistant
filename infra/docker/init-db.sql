@@ -8,7 +8,7 @@ GRANT CREATE ON SCHEMA vector_store TO CURRENT_USER;
 GRANT USAGE ON SCHEMA structured TO CURRENT_USER;
 GRANT CREATE ON SCHEMA structured TO CURRENT_USER;
 
-CREATE TABLE IF NOT EXISTS collections (
+CREATE TABLE IF NOT EXISTS structured.collections (
     id VARCHAR(36) PRIMARY KEY,
     name VARCHAR(255) UNIQUE NOT NULL,
     description TEXT,
@@ -17,9 +17,9 @@ CREATE TABLE IF NOT EXISTS collections (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE TABLE IF NOT EXISTS business_metrics (
+CREATE TABLE IF NOT EXISTS structured.business_metrics (
     id VARCHAR(36) PRIMARY KEY,
-    collection_id VARCHAR(36) NOT NULL REFERENCES collections(id),
+    collection_id VARCHAR(36) NOT NULL REFERENCES structured.collections(id),
     metric_name VARCHAR(255) NOT NULL,
     metric_value DOUBLE PRECISION NOT NULL,
     unit VARCHAR(50),

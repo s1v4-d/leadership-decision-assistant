@@ -49,7 +49,7 @@ async def lifespan(_app: FastAPI) -> AsyncGenerator[None]:
     try:
         engine = create_sync_engine(settings)
         ensure_schemas(engine, settings)
-        create_tables(engine)
+        create_tables(engine, settings)
         _app.state.session_factory = create_session_factory(engine)
     except Exception:
         logger.exception("structured_tables_init_failed")
